@@ -1,35 +1,47 @@
 // src/main.js
-// Task 9: Inverse Kinematics verification & dataset export for Python NumPy checks.
+// Task 10: Operator controls (desktop, keyboard, WebXR VR controller, stats.js).
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
+import Stats from 'three/examples/jsm/libs/stats.module.js';
 import URDFLoader from 'urdf-loader';
 import { setupJointSliders, updateSlidersFromRobot, updateIKHUD } from './ui/jointSliders.js';
+import { setupOperatorControls } from './ui/operatorControls.js';
 import { solveCCD } from './kinematics/ik_ccd.js';
 import { solveDLS } from './kinematics/ik_dls.js';
 
-// 1. Three.js Scene & Camera setup
+// 1. Three.js Scene & Perspective Camera
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1e1e28);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 100);
 camera.position.set(1.5, 1.2, 1.8);
 
-// 2. WebGL Renderer
+// 2. WebGL Renderer with WebXR enabled
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
+renderer.xr.enabled = true; // Enables WebXR immersive sessions
 document.getElementById('app').appendChild(renderer.domElement);
+document.body.appendChild(VRButton.createButton(renderer));
 
-// 3. OrbitControls
+// 3. Stats.js FPS Performance Counter
+const stats = new Stats();
+stats.dom.style.top = '65px';
+stats.dom.style.left = '12px';
+stats.dom.style.zIndex = '100';
+document.body.appendChild(stats.dom);
+
+// 4. OrbitControls
 const orbitControls = new OrbitControls(camera, renderer.domElement);
 orbitControls.enableDamping = true;
 orbitControls.dampingFactor = 0.05;
 orbitControls.target.set(0, 0.4, 0);
 
-// 4. Lights & Environment Ground
+// 5. Lighting & Ground Grid
 scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
 keyLight.position.set(3, 5, 3);
@@ -43,7 +55,7 @@ const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
 grid.position.y = 0.001;
 scene.add(grid);
 
-// 5. Target Handle & TransformControls
+// 6. Target Sphere & TransformControls
 const targetGeo = new THREE.SphereGeometry(0.022, 24, 24);
 const targetMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0x7c2d12, roughness: 0.3 });
 const targetSphere = new THREE.Mesh(targetGeo, targetMat);
@@ -58,7 +70,7 @@ transformControls.addEventListener('dragging-changed', (event) => {
   orbitControls.enabled = !event.value;
 });
 
-// 6. Robot Loading & Bidirectional Sync
+// 7. Robot Loading & Bidirectional Sync
 let robotArm = null;
 let eeLink = null;
 let activeSolver = 'CCD';
@@ -87,8 +99,8 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   );
 
   const overlaySub = document.querySelector('#overlay-info p');
-  if (overlaySub) overlaySub.textContent = 'Task 9: Python Verification of IK (50 Reachable Targets)';
-  console.log('%c🎯 ManipTrain: DLS & CCD solvers ready with 50-pose IK export.', 'color: #f97316; font-weight: bold;');
+  if (overlaySub) overlaySub.textContent = 'Task 10: Operator Controls (Desktop, WebXR, Stats)';
+  console.log('%c🎯 ManipTrain: Desktop & WebXR operator controls ready.', 'color: #f97316; font-weight: bold;');
 });
 
 function syncTargetToWrist() {
@@ -129,17 +141,28 @@ transformControls.addEventListener('change', () => {
   runActiveIKSolver();
 });
 
-// 7. Render Loop
+// 8. Operator Controls (Keyboard & WebXR Controller)
+const operator = setupOperatorControls({
+  scene,
+  renderer,
+  targetSphere,
+  onTargetMoved: () => runActiveIKSolver(),
+  onGripChanged: (closed) => {
+    console.log(`[Operator] Gripper ${closed ? 'CLOSED (100%)' : 'OPEN (0%)'}`);
+  }
+});
+
+// 9. WebXR Render Loop
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-function animate() {
-  requestAnimationFrame(animate);
+renderer.setAnimationLoop(() => {
+  stats.begin();
+  if (operator) operator.updateXR();
   orbitControls.update();
   renderer.render(scene, camera);
-}
-
-animate();
+  stats.end();
+});
