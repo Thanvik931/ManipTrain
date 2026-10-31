@@ -85,7 +85,7 @@ loader.load(
     // Update overlay status
     const overlaySub = document.querySelector('#overlay-info p');
     if (overlaySub) {
-      overlaySub.textContent = 'Task 3: Interactive 6-DOF Joint Sliders';
+      overlaySub.textContent = 'Task 4: Joint Limits & Event Logging';
     }
 
     console.log('%c🤖 ManipTrain: Ready! Use sliders to manipulate joints.', 'color: #4ade80; font-weight: bold;');

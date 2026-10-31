@@ -42,13 +42,13 @@ body {
   color: #9ca3af;
 }
 
-/* Floating Joint Sliders Panel */
+/* Floating Joint Sliders & Limits Panel */
 #joint-controls {
   position: absolute;
   top: 16px;
   right: 16px;
   width: 320px;
-  background: rgba(18, 18, 26, 0.85);
+  background: rgba(18, 18, 26, 0.88);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   padding: 16px;
@@ -61,7 +61,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -89,7 +89,10 @@ body {
 }
 
 .slider-row {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
 }
 
 .slider-label-row {
@@ -103,6 +106,7 @@ body {
 .slider-label-row label {
   color: #d1d5db;
   font-weight: 500;
+  transition: color 0.15s ease;
 }
 
 .deg-display {
@@ -114,6 +118,7 @@ body {
   border-radius: 4px;
   min-width: 52px;
   text-align: right;
+  transition: color 0.15s, background 0.15s;
 }
 
 .slider-row input[type="range"] {
@@ -124,4 +129,67 @@ body {
   outline: none;
   cursor: pointer;
   accent-color: #3b82f6;
+}
+
+/* Joint Limit Hit: Red Flash Animation */
+@keyframes flashRed {
+  0% { background: rgba(239, 68, 68, 0.45); }
+  100% { background: transparent; }
+}
+
+.slider-row.limit-hit {
+  animation: flashRed 0.4s ease-out;
+}
+
+.slider-row.limit-hit label {
+  color: #ef4444 !important;
+  font-weight: 700;
+}
+
+.slider-row.limit-hit .deg-display {
+  color: #ffffff !important;
+  background: #dc2626 !important;
+}
+
+/* Timestamped Log Section */
+.log-section {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+#log-count {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+#limit-log-feed {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  color: #e5e7eb;
+  min-height: 28px;
+}
+
+.log-entry {
+  display: flex;
+  gap: 6px;
+}
+
+.log-time {
+  color: #60a5fa;
+}
+
+.log-msg b {
+  color: #f87171;
 }

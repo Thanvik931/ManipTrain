@@ -1,0 +1,32 @@
+{
+  "shoulder_pan_joint": {
+    "minDeg": -360,
+    "maxDeg": 360,
+    "label": "J1: Shoulder Pan"
+  },
+  "shoulder_lift_joint": {
+    "minDeg": -360,
+    "maxDeg": 360,
+    "label": "J2: Shoulder Lift"
+  },
+  "elbow_joint": {
+    "minDeg": -180,
+    "maxDeg": 180,
+    "label": "J3: Elbow"
+  },
+  "wrist_1_joint": {
+    "minDeg": -360,
+    "maxDeg": 360,
+    "label": "J4: Wrist 1"
+  },
+  "wrist_2_joint": {
+    "minDeg": -360,
+    "maxDeg": 360,
+    "label": "J5: Wrist 2"
+  },
+  "wrist_3_joint": {
+    "minDeg": -360,
+    "maxDeg": 360,
+    "label": "J6: Wrist 3"
+  }
+}
