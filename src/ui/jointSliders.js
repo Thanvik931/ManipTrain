@@ -3,7 +3,7 @@
 
 import { jointLimits, clampJointAngle, onLimitHit } from '../kinematics/jointLimiter.js';
 import { forwardKinematicsUR5, compareFKWithThree } from '../kinematics/fk.js';
-import { exportFKPosesCSV } from './csvExporter.js';
+import { exportFKPosesCSV, exportIKPosesCSV } from './csvExporter.js';
 
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
@@ -38,6 +38,7 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
         <div><b>Target:</b> <span id="ik-target-pos">X:0.00 Y:0.00 Z:0.00</span></div>
         <div><b>Iterations:</b> <span id="ik-iters">0 / 25</span></div>
       </div>
+      <button id="download-ik-csv-btn" class="csv-download-btn ik-download-btn">⬇ Download 50 IK Poses (CSV)</button>
     </div>
 
     <div class="fk-section">
@@ -169,6 +170,13 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
 
   panel.querySelector('#download-fk-csv-btn').addEventListener('click', () => {
     exportFKPosesCSV();
+  });
+
+  panel.querySelector('#download-ik-csv-btn').addEventListener('click', () => {
+    exportIKPosesCSV(robot, () => {
+      updateFKVerification();
+      if (onReset) onReset();
+    });
   });
 
   setTimeout(updateFKVerification, 50);

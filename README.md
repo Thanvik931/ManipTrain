@@ -27,6 +27,13 @@ Verify JavaScript Forward Kinematics against NumPy reference calculations across
 python python/check_fk.py
 ```
 
+### 3. Run Python Inverse Kinematics Verification
+Verify DLS Inverse Kinematics accuracy across 50 reachable 3D target positions and generate error distribution charts (< 1 mm target):
+```bash
+python python/check_ik.py
+```
+Output chart is saved to: `python/results/ik_error_distribution.png`
+
 ## 📁 Repository Structure
 ```
 ManipTrain/

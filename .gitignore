@@ -35,4 +35,6 @@ __pycache__/
 *$py.class
 venv/
 .venv/
+.mplcache/
+python/.mplcache/
 

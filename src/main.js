@@ -1,5 +1,5 @@
 // src/main.js
-// Task 8: Damped Least Squares (DLS) & CCD Inverse Kinematics with live toggle.
+// Task 9: Inverse Kinematics verification & dataset export for Python NumPy checks.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -87,8 +87,8 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   );
 
   const overlaySub = document.querySelector('#overlay-info p');
-  if (overlaySub) overlaySub.textContent = 'Task 8: Damped Least Squares IK (DLS vs CCD)';
-  console.log('%c🎯 ManipTrain: DLS & CCD solvers initialized.', 'color: #f97316; font-weight: bold;');
+  if (overlaySub) overlaySub.textContent = 'Task 9: Python Verification of IK (50 Reachable Targets)';
+  console.log('%c🎯 ManipTrain: DLS & CCD solvers ready with 50-pose IK export.', 'color: #f97316; font-weight: bold;');
 });
 
 function syncTargetToWrist() {
