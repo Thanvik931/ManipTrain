@@ -8,7 +8,7 @@ import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import URDFLoader from 'urdf-loader';
 import { setupJointSliders, updateSlidersFromRobot, updateIKHUD, logCollisionEvent, logGripperEvent } from './ui/jointSliders.js';
-import { setupOperatorControls } from './ui/operatorControls.js';
+import { setupOperatorControls, createGripperHUD } from './ui/operatorControls.js';
 import { solveCCD } from './kinematics/ik_ccd.js';
 import { solveDLS } from './kinematics/ik_dls.js';
 import { createEnvironmentObstacles, initSafeAngles, checkCollisions } from './physics/collisionDetector.js';
@@ -103,6 +103,7 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
     activeSolver = m;
     runActiveIK();
   });
+  createGripperHUD((f) => updateGrip(f, (evt) => logGripperEvent(evt)));
 });
 
 function syncTargetToWrist() {

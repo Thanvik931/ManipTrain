@@ -97,7 +97,8 @@ function setGripForce(val, callback) {
   if (callback) callback(currentGripForce);
 }
 
-function createGripperHUD(onGripChange) {
+export function createGripperHUD(onGripChange) {
+  if (document.querySelector('.gripper-control-row')) return;
   const ikSection = document.querySelector('.ik-section');
   if (!ikSection) return;
 

@@ -125,8 +125,8 @@ export function checkCollisions(robot, onCollision) {
 
     for (const obs of obstacles) {
       if (tempBox.intersectsBox(obs.box)) {
-        if (obs.name === 'Work Table' && (linkName === 'ee_link' || linkName === 'wrist_3_link')) {
-          if (tempBox.min.y >= 0.13) continue; // Allow gripper fingers to reach tabletop objects
+        if (obs.name === 'Work Table' && (linkName.startsWith('wrist_') || linkName === 'ee_link')) {
+          if (tempBox.min.y >= 0.13) continue; // Allow wrist & gripper to operate in workspace above table
         }
         let totalDeltaRad = 0;
         Object.keys(lastSafeAngles).forEach((jName) => {
