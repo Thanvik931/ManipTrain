@@ -1,218 +1,110 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  width: 100vw; height: 100vh; overflow: hidden;
   background-color: #1a1a1a;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   user-select: none;
 }
-
-#app {
-  width: 100%;
-  height: 100%;
-}
+#app { width: 100%; height: 100%; }
 
 #overlay-info {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  color: #ffffff;
-  background: rgba(18, 18, 26, 0.75);
+  position: absolute; top: 16px; left: 16px;
+  color: #fff; background: rgba(18, 18, 26, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 12px 18px;
-  border-radius: 8px;
-  pointer-events: none;
-  backdrop-filter: blur(8px);
+  padding: 12px 18px; border-radius: 8px;
+  pointer-events: none; backdrop-filter: blur(8px);
 }
+#overlay-info h1 { font-size: 1.25rem; margin-bottom: 4px; color: #4ade80; }
+#overlay-info p { font-size: 0.875rem; color: #9ca3af; }
 
-#overlay-info h1 {
-  font-size: 1.25rem;
-  margin-bottom: 4px;
-  color: #4ade80;
-}
-
-#overlay-info p {
-  font-size: 0.875rem;
-  color: #9ca3af;
-}
-
-/* Floating Joint Sliders & Kinematics Panel */
+/* Floating Controls & Kinematics Panel */
 #joint-controls {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 320px;
-  background: rgba(18, 18, 26, 0.88);
+  position: absolute; top: 16px; right: 16px; width: 320px;
+  background: rgba(18, 18, 26, 0.90);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  padding: 14px 16px;
-  color: #f3f4f6;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  border-radius: 10px; padding: 12px 14px; color: #f3f4f6;
+  backdrop-filter: blur(10px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
-
 .panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  padding-bottom: 6px;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px; padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
+.panel-header h2 { font-size: 0.9rem; font-weight: 600; color: #60a5fa; }
 
-.panel-header h2 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #60a5fa;
-}
-
-#reset-joints-btn {
+#reset-joints-btn, .action-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #e5e7eb;
-  padding: 3px 8px;
-  font-size: 0.75rem;
-  border-radius: 4px;
-  cursor: pointer;
+  color: #e5e7eb; padding: 3px 8px; font-size: 0.75rem;
+  border-radius: 4px; cursor: pointer; transition: background 0.15s;
 }
+#reset-joints-btn:hover { background: rgba(239, 68, 68, 0.4); border-color: #ef4444; }
+.action-btn:hover { background: rgba(59, 130, 246, 0.4); border-color: #3b82f6; }
 
-#reset-joints-btn:hover {
-  background: rgba(239, 68, 68, 0.4);
-  border-color: #ef4444;
-}
-
-.slider-row {
-  margin-bottom: 8px;
-  padding: 2px 4px;
-  border-radius: 6px;
-}
-
+.slider-row { margin-bottom: 6px; padding: 2px 4px; border-radius: 6px; }
 .slider-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.78rem;
-  margin-bottom: 2px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.76rem; margin-bottom: 2px;
 }
-
-.slider-label-row label {
-  color: #d1d5db;
-}
-
+.slider-label-row label { color: #d1d5db; }
 .deg-display {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.78rem;
-  color: #facc15;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 2px 5px;
-  border-radius: 4px;
-  min-width: 50px;
-  text-align: right;
+  font-size: 0.76rem; color: #facc15; background: rgba(0, 0, 0, 0.4);
+  padding: 1px 5px; border-radius: 4px; min-width: 48px; text-align: right;
 }
-
 .slider-row input[type="range"] {
-  width: 100%;
-  height: 5px;
-  background: #374151;
-  outline: none;
-  cursor: pointer;
-  accent-color: #3b82f6;
+  width: 100%; height: 5px; background: #374151; outline: none;
+  cursor: pointer; accent-color: #3b82f6;
 }
 
 @keyframes flashRed {
   0% { background: rgba(239, 68, 68, 0.45); }
   100% { background: transparent; }
 }
+.slider-row.limit-hit { animation: flashRed 0.4s ease-out; }
+.slider-row.limit-hit label { color: #ef4444 !important; font-weight: 700; }
+.slider-row.limit-hit .deg-display { color: #fff !important; background: #dc2626 !important; }
 
-.slider-row.limit-hit {
-  animation: flashRed 0.4s ease-out;
-}
-
-.slider-row.limit-hit label {
-  color: #ef4444 !important;
-  font-weight: 700;
-}
-
-.slider-row.limit-hit .deg-display {
-  color: #ffffff !important;
-  background: #dc2626 !important;
-}
-
-/* Forward Kinematics (FK) Accuracy HUD */
+/* FK HUD */
 .fk-section {
-  margin-top: 10px;
-  padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  border-radius: 6px;
+  margin-top: 8px; padding: 8px 10px; background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 6px;
 }
-
 .fk-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  color: #93c5fd;
-  margin-bottom: 4px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.74rem; color: #93c5fd; margin-bottom: 4px;
 }
-
 .fk-badge {
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem;
+  font-weight: 700; padding: 2px 6px; border-radius: 4px;
 }
-
-.fk-pass {
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-  border: 1px solid #22c55e;
-}
-
-.fk-warn {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border: 1px solid #ef4444;
-}
-
+.fk-pass { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+.fk-warn { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
 .fk-coords {
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 0.7rem;
-  color: #9ca3af;
-  line-height: 1.4;
+  font-family: ui-monospace, Menlo, monospace; font-size: 0.68rem;
+  color: #9ca3af; line-height: 1.35; margin-bottom: 6px;
 }
+.csv-download-btn {
+  width: 100%; background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd;
+  padding: 4px 8px; font-size: 0.72rem; border-radius: 4px;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+.csv-download-btn:hover { background: rgba(59, 130, 246, 0.35); color: #fff; }
 
 /* Violation Log */
 .log-section {
-  margin-top: 8px;
-  padding-top: 6px;
+  margin-top: 8px; padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
-
 .log-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  color: #9ca3af;
-  margin-bottom: 4px;
+  display: flex; justify-content: space-between;
+  font-size: 0.72rem; color: #9ca3af; margin-bottom: 4px;
 }
-
 #limit-log-feed {
-  background: rgba(0, 0, 0, 0.4);
-  padding: 6px 8px;
-  border-radius: 5px;
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 0.7rem;
-  color: #e5e7eb;
+  background: rgba(0, 0, 0, 0.4); padding: 5px 8px; border-radius: 5px;
+  font-family: ui-monospace, Menlo, monospace; font-size: 0.68rem; color: #e5e7eb;
 }
-
 .log-entry { display: flex; gap: 6px; }
 .log-time { color: #60a5fa; }
 .log-msg b { color: #f87171; }

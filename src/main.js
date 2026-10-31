@@ -95,7 +95,7 @@ loader.load(
 
     const overlaySub = document.querySelector('#overlay-info p');
     if (overlaySub) {
-      overlaySub.textContent = 'Task 5: Forward Kinematics (FK) Verified';
+      overlaySub.textContent = 'Task 6: Python FK Cross-Validation';
     }
 
     console.log('%c🎯 ManipTrain: FK verification active (< 1 mm target)', 'color: #22c55e; font-weight: bold;');

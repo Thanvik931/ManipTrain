@@ -10,17 +10,22 @@ ManipTrain is a browser-based WebXR simulator where an operator controls a 6-deg
 
 ### Prerequisites
 - Node.js (v18+ recommended)
+- Python 3.9+ with NumPy (`pip install numpy`)
 - Modern web browser (Google Chrome recommended)
 
-### Run Locally
+### 1. Run the Simulator Locally
 ```bash
-# Install dependencies
+# Install dependencies & start Vite local server
 npm install
-
-# Start Vite local development server
 npm run dev
 ```
 Open `http://localhost:5173` in Chrome to view the simulator.
+
+### 2. Run Python Kinematic Cross-Validation
+Verify JavaScript Forward Kinematics against NumPy reference calculations across 20 test poses (< 1 mm target):
+```bash
+python python/check_fk.py
+```
 
 ## 📁 Repository Structure
 ```
@@ -28,6 +33,8 @@ ManipTrain/
 ├── docs/                # Architecture, manuals, PROGRESS.md, CREDITS.md
 ├── public/models/       # URDF and 3D mesh assets
 ├── python/              # Kinematics validation scripts & log analysis
+│   ├── check_fk.py      # NumPy Forward Kinematics cross-validation
+│   └── fk_poses.csv     # 20 reference poses and ground-truth Cartesian points
 ├── src/
 │   ├── kinematics/      # Forward & Inverse Kinematics (FK, CCD IK, DLS IK)
 │   ├── physics/         # Collision checks, bounding boxes, grip thresholds
@@ -42,17 +49,6 @@ ManipTrain/
 ```
 
 ## 🌐 Deploy to Vercel
-1. Push your repository to GitHub:
-   ```bash
-   git init
-   git add .
-   git commit -m "feat: initial project setup with vite and three.js"
-   git branch -M main
-   git remote add origin https://github.com/Thanvik931/ManipTrain.git
-   git push -u origin main
-   ```
-2. Go to [Vercel](https://vercel.com) and click **"Add New Project"**.
-3. Import `Thanvik931/ManipTrain` from GitHub.
-4. Keep the default settings (Framework preset: `Vite`, Build command: `vite build`, Output directory: `dist`).
-5. Click **Deploy**. Vercel will build and assign a live public URL.
-
+1. Push repository changes to GitHub: `git push origin main`
+2. Connect `Thanvik931/ManipTrain` on [Vercel](https://vercel.com).
+3. Vercel automatically builds and provides a permanent live URL.

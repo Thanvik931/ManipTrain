@@ -125,3 +125,4 @@ export function compareFKWithThree(robot, computedPos) {
   const errorMm = groundTruth.distanceTo(computedPos) * 1000;
   return { errorMm, groundTruth, computed: computedPos };
 }
+
