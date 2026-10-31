@@ -25,21 +25,17 @@ export function initScenarioS1(scene, onComplete) {
 
   // 1. Create 3 target zones on table surface
   BLOCK_CONFIG.forEach((cfg) => {
-    const padGeo = new THREE.CylinderGeometry(0.038, 0.038, 0.003, 24);
-    const padMat = new THREE.MeshStandardMaterial({
-      color: cfg.color,
-      transparent: true,
-      opacity: 0.35,
-      roughness: 0.2
-    });
-    const pad = new THREE.Mesh(padGeo, padMat);
-    pad.position.set(cfg.target[0], cfg.target[1], cfg.target[2]);
+    const pad = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.038, 0.038, 0.003, 24),
+      new THREE.MeshStandardMaterial({ color: cfg.color, transparent: true, opacity: 0.35, roughness: 0.2 })
+    );
+    pad.position.set(...cfg.target);
     scene.add(pad);
 
-    // Glowing border ring
-    const ringGeo = new THREE.RingGeometry(0.036, 0.040, 24);
-    const ringMat = new THREE.MeshBasicMaterial({ color: cfg.color, side: THREE.DoubleSide });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.036, 0.040, 24),
+      new THREE.MeshBasicMaterial({ color: cfg.color, side: THREE.DoubleSide })
+    );
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(cfg.target[0], cfg.target[1] + 0.002, cfg.target[2]);
     scene.add(ring);

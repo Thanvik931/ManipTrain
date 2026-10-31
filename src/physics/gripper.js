@@ -47,6 +47,10 @@ export function getHeldObject() {
   return heldObject;
 }
 
+export function getGraspableObjects() {
+  return graspables;
+}
+
 /**
  * Creates a solid cube and a fragile glass object resting on the table.
  */
@@ -129,7 +133,7 @@ export function updateGrip(gripPercent, onEvent) {
     for (const obj of graspables) {
       if (obj.isCrushed) continue;
       obj.mesh.getWorldPosition(tempObjPos);
-      if (tempWorldPos.distanceTo(tempObjPos) < 0.06) {
+      if (tempWorldPos.distanceTo(tempObjPos) < 0.08) {
         obj.isHeld = true;
         heldObject = obj;
         if (onEvent) onEvent({ type: 'grab', name: obj.name, gripPercent });

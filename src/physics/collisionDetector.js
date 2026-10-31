@@ -125,6 +125,9 @@ export function checkCollisions(robot, onCollision) {
 
     for (const obs of obstacles) {
       if (tempBox.intersectsBox(obs.box)) {
+        if (obs.name === 'Work Table' && (linkName === 'ee_link' || linkName === 'wrist_3_link')) {
+          if (tempBox.min.y >= 0.13) continue; // Allow gripper fingers to reach tabletop objects
+        }
         let totalDeltaRad = 0;
         Object.keys(lastSafeAngles).forEach((jName) => {
           const current = robot.joints[jName] ? (robot.joints[jName].angle || 0) : 0;

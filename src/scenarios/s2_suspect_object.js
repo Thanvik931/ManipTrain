@@ -32,32 +32,24 @@ export function initScenarioS2(scene, onComplete) {
   const base = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.01, 0.10), wallMat);
   containmentMeshGroup.add(base);
 
-  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.08, 0.10), wallMat);
-  leftWall.position.set(-0.045, 0.04, 0);
-  containmentMeshGroup.add(leftWall);
-
-  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.08, 0.10), wallMat);
-  rightWall.position.set(0.045, 0.04, 0);
-  containmentMeshGroup.add(rightWall);
-
-  const backWall = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.01), wallMat);
-  backWall.position.set(0, 0.04, 0.045);
-  containmentMeshGroup.add(backWall);
-
-  const frontWall = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.01), wallMat);
-  frontWall.position.set(0, 0.04, -0.045);
-  containmentMeshGroup.add(frontWall);
+  const walls = [
+    { s: [0.01, 0.08, 0.10], p: [-0.045, 0.04, 0] },
+    { s: [0.01, 0.08, 0.10], p: [0.045, 0.04, 0] },
+    { s: [0.08, 0.08, 0.01], p: [0, 0.04, 0.045] },
+    { s: [0.08, 0.08, 0.01], p: [0, 0.04, -0.045] }
+  ];
+  walls.forEach((w) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(...w.s), wallMat);
+    mesh.position.set(...w.p);
+    containmentMeshGroup.add(mesh);
+  });
 
   scene.add(containmentMeshGroup);
   containmentBox = new THREE.Box3().setFromObject(containmentMeshGroup);
 
-  // 2. Create Upright Suspect Cylinder (Hazard yellow with red stripes)
+  // 2. Create Upright Suspect Cylinder (Hazard yellow)
   const cylGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.07, 24);
-  const cylMat = new THREE.MeshStandardMaterial({
-    color: 0xfbbf24,
-    roughness: 0.3,
-    metalness: 0.2
-  });
+  const cylMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.3, metalness: 0.2 });
   const mesh = new THREE.Mesh(cylGeo, cylMat);
   mesh.position.set(...START_POS);
   scene.add(mesh);
@@ -167,7 +159,6 @@ export function updateS2(onComplete) {
   const elapsed = (performance.now() - startTime) / 1000;
   if (uiElements.timer) uiElements.timer.textContent = `${elapsed.toFixed(1)} s`;
 
-  // 1. Calculate tilt angle relative to vertical world Y axis
   suspectObject.mesh.getWorldQuaternion(tempQuat);
   tempUp.set(0, 1, 0).applyQuaternion(tempQuat);
   const dot = Math.min(1, Math.max(-1, tempUp.dot(WORLD_UP)));
@@ -180,7 +171,6 @@ export function updateS2(onComplete) {
     uiElements.tiltBar.className = tiltDeg > 12.0 ? 'tilt-bar-fill danger' : 'tilt-bar-fill';
   }
 
-  // 2. Detonation condition: tilt > 15 degrees while handled
   if (suspectObject.isHeld && tiltDeg > 15.0 && !isDetonated) {
     isDetonated = true;
     isRunning = false;
@@ -192,7 +182,6 @@ export function updateS2(onComplete) {
     return;
   }
 
-  // 3. Victory condition: safely placed inside containment box
   const held = getHeldObject();
   const dx = suspectObject.mesh.position.x - BOX_POS[0];
   const dz = suspectObject.mesh.position.z - BOX_POS[2];

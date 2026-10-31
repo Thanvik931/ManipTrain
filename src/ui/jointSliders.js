@@ -68,7 +68,6 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
   movableJointsList = Object.values(robot.joints).filter(
     (j) => j.jointType === 'revolute' || j.jointType === 'continuous'
   );
-
   currentSliders = {};
   totalHits = 0;
 
@@ -83,7 +82,6 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
     const { errorMm } = compareFKWithThree(robot, computedTip);
     fkBadgeEl.textContent = `Δ ${errorMm.toFixed(2)} mm`;
     fkBadgeEl.className = errorMm <= 1.0 ? 'fk-badge fk-pass' : 'fk-badge fk-warn';
-
     if (onFKCalculated) onFKCalculated(computedTip);
   }
 
@@ -99,7 +97,6 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
       </div>
       <input type="range" id="slider-${joint.name}" min="${cfg.minDeg - 15}" max="${cfg.maxDeg + 15}" step="0.5" value="0" />
     `;
-
     const input = row.querySelector('input');
     const display = row.querySelector('.deg-display');
 
@@ -108,7 +105,6 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
       const { clampedDeg, isAtLimit } = clampJointAngle(joint.name, requestedDeg);
       display.textContent = `${clampedDeg.toFixed(1)}°`;
       robot.setJointValue(joint.name, clampedDeg * DEG2RAD);
-
       row.classList.toggle('limit-hit', isAtLimit);
       updateFKVerification();
       if (onTargetSync) onTargetSync();
@@ -192,7 +188,6 @@ export function updateIKHUD(targetPos, distanceMm, iters, reached) {
   const targetPosEl = document.getElementById('ik-target-pos');
   const itersEl = document.getElementById('ik-iters');
   const badgeEl = document.getElementById('ik-badge');
-
   if (targetPosEl) targetPosEl.textContent = `X:${targetPos.x.toFixed(2)} Y:${targetPos.y.toFixed(2)} Z:${targetPos.z.toFixed(2)}`;
   if (itersEl) itersEl.textContent = `${iters} iters`;
   if (badgeEl) {
