@@ -130,3 +130,4 @@ export function solveCCD(robot, targetWorldPos, options = {}) {
     reached: distance <= tolerance
   };
 }
+
