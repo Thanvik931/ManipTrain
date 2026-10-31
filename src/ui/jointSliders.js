@@ -1,5 +1,5 @@
 // src/ui/jointSliders.js
-// Task 7: Sliders, FK validation, and real-time CCD Inverse Kinematics HUD.
+// Task 7: Sliders with bidirectional target tracking and clean home-reset sync.
 
 import { jointLimits, clampJointAngle, onLimitHit } from '../kinematics/jointLimiter.js';
 import { forwardKinematicsUR5, compareFKWithThree } from '../kinematics/fk.js';
@@ -10,7 +10,7 @@ const RAD2DEG = 180 / Math.PI;
 let currentSliders = {};
 let movableJointsList = [];
 
-export function setupJointSliders(robot, onFKCalculated) {
+export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset) {
   const existing = document.getElementById('joint-controls');
   if (existing) existing.remove();
 
@@ -29,7 +29,7 @@ export function setupJointSliders(robot, onFKCalculated) {
         <span id="ik-badge" class="fk-badge fk-pass">0.0 mm</span>
       </div>
       <div class="stat-coords">
-        <div><b>Target:</b> <span id="ik-target-pos">X:0.40 Y:0.40 Z:0.20</span></div>
+        <div><b>Target:</b> <span id="ik-target-pos">X:0.00 Y:0.00 Z:0.00</span></div>
         <div><b>Iterations:</b> <span id="ik-iters">0 / 20</span></div>
       </div>
     </div>
@@ -110,6 +110,9 @@ export function setupJointSliders(robot, onFKCalculated) {
         row.classList.remove('limit-hit');
       }
       updateFKVerification();
+
+      // Keep target point attached to wrist when sliders move manually
+      if (onTargetSync) onTargetSync();
     });
 
     currentSliders[joint.name] = { input, display, row };
@@ -127,6 +130,7 @@ export function setupJointSliders(robot, onFKCalculated) {
     `;
   });
 
+  // Reset button: resets joints to 0.0° and triggers home position sync
   panel.querySelector('#reset-joints-btn').addEventListener('click', () => {
     Object.keys(currentSliders).forEach((name) => {
       const { input, display, row } = currentSliders[name];
@@ -135,7 +139,9 @@ export function setupJointSliders(robot, onFKCalculated) {
       row.classList.remove('limit-hit');
       robot.setJointValue(name, 0);
     });
+    robot.updateMatrixWorld(true);
     updateFKVerification();
+    if (onReset) onReset();
   });
 
   panel.querySelector('#download-fk-csv-btn').addEventListener('click', () => {
@@ -145,9 +151,6 @@ export function setupJointSliders(robot, onFKCalculated) {
   setTimeout(updateFKVerification, 50);
 }
 
-/**
- * Updates UI sliders and badges to mirror IK solved joint angles.
- */
 export function updateSlidersFromRobot(robot) {
   movableJointsList.forEach((j) => {
     const s = currentSliders[j.name];
@@ -159,9 +162,6 @@ export function updateSlidersFromRobot(robot) {
   });
 }
 
-/**
- * Updates IK solver telemetry display in HUD.
- */
 export function updateIKHUD(targetPos, distanceMm, iters, reached) {
   const targetPosEl = document.getElementById('ik-target-pos');
   const itersEl = document.getElementById('ik-iters');

@@ -1,133 +1,105 @@
 // src/kinematics/ik_ccd.js
-// Task 7: Inverse Kinematics with Cyclic Coordinate Descent (CCD) [STUDENT-WRITES-MATH]
-// Moves robot end-effector to chase a 3D target position iteratively.
+// Task 7: Robust Cyclic Coordinate Descent (CCD) Inverse Kinematics solver.
 
 import * as THREE from 'three';
 import { clampJointAngle } from './jointLimiter.js';
 
+const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 
 /**
- * 1. Concept: 2D Planar CCD Step
- * For a joint at jointPos, end-effector at eePos, and goal at targetPos:
- *
- * Vector to End-Effector : V_ee   = eePos - jointPos
- * Vector to Target Goal  : V_goal = targetPos - jointPos
- *
- * Angle to rotate joint:
- *   angle = atan2(V_ee.x * V_goal.y - V_ee.y * V_goal.x, V_ee.x * V_goal.x + V_ee.y * V_goal.y)
- */
-
-/**
  * Solves Inverse Kinematics for the UR5 robot using Cyclic Coordinate Descent (CCD).
- * Iterates backwards from wrist to base, adjusting each joint angle to reduce distance to target.
+ * Smoothly drives end-effector to the target position while enforcing joint limits.
  *
- * @param {URDFRobot} robot - The loaded Three.js URDF robot
- * @param {THREE.Vector3} targetWorldPos - The 3D position to reach
- * @param {Object} [options] - Configuration parameters
- * @param {number} [options.maxIterations=20] - Max search cycles per frame
- * @param {number} [options.toleranceMeters=0.005] - Stopping distance (5 mm)
+ * @param {URDFRobot} robot - Three.js URDF robot instance
+ * @param {THREE.Vector3} targetPos - 3D world target coordinate
+ * @param {Object} [options]
  * @returns {{ iterations: number, finalDistanceMm: number, reached: boolean }}
  */
-export function solveCCD(robot, targetWorldPos, options = {}) {
+export function solveCCD(robot, targetPos, options = {}) {
   const maxIterations = options.maxIterations || 20;
   const tolerance = options.toleranceMeters || 0.005; // 5 mm
 
-  // Movable joints ordered from wrist (tip) backwards to base
-  const jointChain = [
-    robot.joints['wrist_3_joint'],
-    robot.joints['wrist_2_joint'],
-    robot.joints['wrist_1_joint'],
-    robot.joints['elbow_joint'],
-    robot.joints['shoulder_lift_joint'],
-    robot.joints['shoulder_pan_joint']
-  ].filter(Boolean);
+  robot.updateMatrixWorld(true);
+  const eeLink = robot.links['ee_link'] || robot.links['wrist_3_link'];
+  if (!eeLink) return { iterations: 0, finalDistanceMm: 0, reached: false };
 
-  const eeLink = robot.links ? robot.links['ee_link'] : null;
   const eePos = new THREE.Vector3();
   const jointPos = new THREE.Vector3();
   const jointAxisWorld = new THREE.Vector3();
+  const parentQuat = new THREE.Quaternion();
   const vEE = new THREE.Vector3();
   const vTarget = new THREE.Vector3();
 
+  // Joint chain backwards from wrist 3 to shoulder pan
+  const jointNames = [
+    'wrist_3_joint',
+    'wrist_2_joint',
+    'wrist_1_joint',
+    'elbow_joint',
+    'shoulder_lift_joint',
+    'shoulder_pan_joint'
+  ];
+
   let iterations = 0;
-  let distance = Infinity;
 
   for (let iter = 0; iter < maxIterations; iter++) {
     iterations = iter + 1;
+    robot.updateMatrixWorld(true);
+    eeLink.getWorldPosition(eePos);
 
-    // Check current end-effector position
-    if (eeLink) {
-      eeLink.getWorldPosition(eePos);
-    } else {
-      break;
-    }
+    if (eePos.distanceTo(targetPos) <= tolerance) break;
 
-    distance = eePos.distanceTo(targetWorldPos);
-    if (distance <= tolerance) {
-      return {
-        iterations,
-        finalDistanceMm: Number((distance * 1000).toFixed(2)),
-        reached: true
-      };
-    }
+    for (const name of jointNames) {
+      const joint = robot.joints[name];
+      if (!joint) continue;
 
-    // Step through joints backwards from end-effector to base
-    for (const joint of jointChain) {
-      // 1. Get joint position in world coordinates
+      robot.updateMatrixWorld(true);
       joint.getWorldPosition(jointPos);
+      eeLink.getWorldPosition(eePos);
 
-      // 2. Compute vectors from joint to end-effector and joint to target
       vEE.subVectors(eePos, jointPos);
-      vTarget.subVectors(targetWorldPos, jointPos);
+      vTarget.subVectors(targetPos, jointPos);
 
-      // If either vector is very small, skip to prevent numerical instability
       if (vEE.lengthSq() < 1e-6 || vTarget.lengthSq() < 1e-6) continue;
 
-      // 3. Get joint rotation axis in world space
-      // Local axis from URDF: [0,0,1] or [0,1,0]
-      const localAxis = joint.axis || new THREE.Vector3(0, 0, 1);
-      jointAxisWorld.copy(localAxis).transformDirection(joint.matrixWorld).normalize();
+      // Invariant world rotation axis from joint's parent coordinate frame
+      if (joint.parent) {
+        joint.parent.getWorldQuaternion(parentQuat);
+        jointAxisWorld.copy(joint.axis || new THREE.Vector3(0, 0, 1)).applyQuaternion(parentQuat).normalize();
+      } else {
+        jointAxisWorld.copy(joint.axis || new THREE.Vector3(0, 0, 1)).normalize();
+      }
 
-      // Project vectors onto plane perpendicular to the rotation axis
+      // Project vectors onto rotation plane
       vEE.projectOnPlane(jointAxisWorld).normalize();
       vTarget.projectOnPlane(jointAxisWorld).normalize();
 
-      // TODO [STUDENT-WRITES-MATH]:
-      // Angle between vEE and vTarget around jointAxisWorld:
-      // Hint 1: dot = vEE.dot(vTarget)
-      // Hint 2: cross = (vEE x vTarget).dot(jointAxisWorld)
-      // Hint 3: deltaAngle = Math.atan2(cross, dot)
       const dot = Math.min(1, Math.max(-1, vEE.dot(vTarget)));
       const crossVec = new THREE.Vector3().crossVectors(vEE, vTarget);
       const cross = crossVec.dot(jointAxisWorld);
       let deltaAngle = Math.atan2(cross, dot);
 
-      // Apply a damping factor to avoid overshooting
-      deltaAngle *= 0.7;
-
       if (Math.abs(deltaAngle) > 1e-4) {
+        // Damping and rate limiting per iteration
+        deltaAngle = Math.max(-0.25, Math.min(0.25, deltaAngle * 0.7));
+
         const currentAngleRad = joint.angle || 0;
-        const proposedAngleDeg = (currentAngleRad + deltaAngle) * (180 / Math.PI);
+        const proposedDeg = (currentAngleRad + deltaAngle) * RAD2DEG;
+        const { clampedDeg } = clampJointAngle(joint.name, proposedDeg);
 
-        // Enforce physical limits from Task 4 single source of truth
-        const { clampedDeg } = clampJointAngle(joint.name, proposedAngleDeg);
-        robot.setJointValue(joint.name, clampedDeg * (Math.PI / 180));
-
-        // Update world matrices for subsequent joints
-        robot.updateMatrixWorld(true);
-        eeLink.getWorldPosition(eePos);
+        robot.setJointValue(joint.name, clampedDeg * DEG2RAD);
       }
     }
   }
 
-  if (eeLink) eeLink.getWorldPosition(eePos);
-  distance = eePos.distanceTo(targetWorldPos);
+  robot.updateMatrixWorld(true);
+  eeLink.getWorldPosition(eePos);
+  const finalDistance = eePos.distanceTo(targetPos);
 
   return {
     iterations,
-    finalDistanceMm: Number((distance * 1000).toFixed(2)),
-    reached: distance <= tolerance
+    finalDistanceMm: Number((finalDistance * 1000).toFixed(2)),
+    reached: finalDistance <= tolerance
   };
 }
-
