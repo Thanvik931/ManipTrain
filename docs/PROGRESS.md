@@ -14,3 +14,4 @@ Record of completed tasks, dates, and milestones.
 - 31 Oct 2026: Task 10 - Integrated multi-modal operator controls: desktop mouse/TransformControls, keyboard nudging (W/A/S/D/Q/E), Space/G gripper toggle, WebXR VR controller 6-DOF tracking, and live stats.js FPS monitor (60 FPS).
 - 31 Oct 2026: Task 11 - Implemented simplified AABB link collision detection against table, safety shield, and floor; added automatic rollback to last safe posture, visual flash warning, and speed-proportional impact force logging.
 - 31 Oct 2026: Task 12 - Added visual two-finger mechanical gripper with variable force (0-100%), solid cube, fragile object with crush deformation, hold/slip/crush rules, and simple gravity.
+- 31 Oct 2026: Task 13 - Built Scenario S1 Pick-and-Place with 3 colored blocks (Red, Green, Blue), matching target zones, live timer, bump collision counter, and automated completion detection.

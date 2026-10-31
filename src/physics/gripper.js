@@ -38,6 +38,15 @@ export function attachGripper(eeLink) {
   return gripperGroup;
 }
 
+export function setGraspableObjects(objectsList) {
+  graspables = objectsList;
+  heldObject = null;
+}
+
+export function getHeldObject() {
+  return heldObject;
+}
+
 /**
  * Creates a solid cube and a fragile glass object resting on the table.
  */

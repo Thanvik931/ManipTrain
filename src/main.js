@@ -1,5 +1,5 @@
 // src/main.js
-// Task 12: High-performance gripper, grasping rules, optimized collision detection, and WebXR.
+// Task 13: Scenario S1 - Pick and place 3 colored blocks with live timer, bump counter, and IK.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -22,15 +22,10 @@ import {
   initSafeAngles,
   checkCollisions
 } from './physics/collisionDetector.js';
-import {
-  attachGripper,
-  createGraspableObjects,
-  updateGrip,
-  syncHeldObject,
-  updateGravity
-} from './physics/gripper.js';
+import { attachGripper, updateGrip, syncHeldObject, updateGravity } from './physics/gripper.js';
+import { initScenarioS1, recordS1Bump, updateS1 } from './scenarios/s1_pick_place.js';
 
-// 1. Scene & Camera
+// 1. Scene & Perspective Camera
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1e1e28);
 
@@ -61,7 +56,7 @@ orbitControls.enableDamping = true;
 orbitControls.dampingFactor = 0.05;
 orbitControls.target.set(0, 0.4, 0);
 
-// 5. Lights & Floor
+// 5. Lighting & Floor
 scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
 keyLight.position.set(3, 5, 3);
@@ -75,9 +70,11 @@ const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
 grid.position.y = 0.001;
 scene.add(grid);
 
-// 6. Environment Obstacles & Graspable Objects
+// 6. Obstacles & Scenario S1 Initialization
 createEnvironmentObstacles(scene);
-createGraspableObjects(scene);
+initScenarioS1(scene, (result) => {
+  console.log(`%c🎉 S1 Complete! Time: ${result.time.toFixed(1)}s | Bumps: ${result.bumps}`, 'color:#4ade80; font-weight:bold;');
+});
 
 // 7. Target Sphere & TransformControls
 const targetGeo = new THREE.SphereGeometry(0.022, 24, 24);
@@ -124,8 +121,8 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   );
 
   const overlaySub = document.querySelector('#overlay-info p');
-  if (overlaySub) overlaySub.textContent = 'Task 12: Gripper & Grasping Rules (Hold, Slip, Crush, Gravity)';
-  console.log('%c🎯 ManipTrain: Fast kinematics and grasping active.', 'color: #f97316; font-weight: bold;');
+  if (overlaySub) overlaySub.textContent = 'Task 13: Scenario S1 (Pick-and-Place 3 Blocks)';
+  console.log('%c🎯 ManipTrain: S1 Pick-and-Place ready.', 'color: #f97316; font-weight: bold;');
 });
 
 function syncTargetToWrist() {
@@ -143,9 +140,14 @@ function resetToHome() {
   updateIKHUD(targetSphere.position, 0.0, 0, true);
 }
 
+function handleCollision(event) {
+  logCollisionEvent(event);
+  recordS1Bump();
+}
+
 function onManualSliderMove() {
   if (!robotArm) return;
-  const col = checkCollisions(robotArm, (event) => logCollisionEvent(event));
+  const col = checkCollisions(robotArm, (event) => handleCollision(event));
   if (col.collided) updateSlidersFromRobot(robotArm);
   syncTargetToWrist();
 }
@@ -159,7 +161,7 @@ function runActiveIKSolver() {
     result = solveCCD(robotArm, targetSphere.position, { maxIterations: 12, toleranceMeters: 0.005 });
   }
 
-  const col = checkCollisions(robotArm, (event) => logCollisionEvent(event));
+  const col = checkCollisions(robotArm, (event) => handleCollision(event));
   if (col.collided) syncTargetToWrist();
 
   updateSlidersFromRobot(robotArm);
@@ -189,6 +191,7 @@ renderer.setAnimationLoop(() => {
   if (operator) operator.updateXR();
   syncHeldObject();
   updateGravity(0.016);
+  updateS1();
   orbitControls.update();
   renderer.render(scene, camera);
   stats.end();
