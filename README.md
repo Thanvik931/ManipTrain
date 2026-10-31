@@ -55,3 +55,4 @@ ManipTrain/
 3. Import `Thanvik931/ManipTrain` from GitHub.
 4. Keep the default settings (Framework preset: `Vite`, Build command: `vite build`, Output directory: `dist`).
 5. Click **Deploy**. Vercel will build and assign a live public URL.
+

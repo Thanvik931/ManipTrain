@@ -1,0 +1,203 @@
+<?xml version="1.0" ?>
+<!-- Universal Robots UR5 Arm Description -->
+<!-- Kinematics and limits conform to official Universal Robots specifications -->
+<robot name="ur5">
+  <material name="UR/Blue">
+    <color rgba="0.13 0.44 0.70 1.0"/>
+  </material>
+  <material name="UR/Grey">
+    <color rgba="0.75 0.75 0.75 1.0"/>
+  </material>
+  <material name="UR/DarkGrey">
+    <color rgba="0.25 0.25 0.25 1.0"/>
+  </material>
+
+  <!-- Base Link -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <mesh filename="visual/base.dae"/>
+      </geometry>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.075"/>
+      </geometry>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.05"/>
+    </collision>
+  </link>
+
+  <!-- Joint 1: Shoulder Pan -->
+  <joint name="shoulder_pan_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.089159"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="150.0" lower="-6.2831853" upper="6.2831853" velocity="3.14"/>
+  </joint>
+
+  <!-- Shoulder Link -->
+  <link name="shoulder_link">
+    <visual>
+      <geometry>
+        <mesh filename="visual/shoulder.dae"/>
+      </geometry>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.15" radius="0.06"/>
+      </geometry>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    </collision>
+  </link>
+
+  <!-- Joint 2: Shoulder Lift -->
+  <joint name="shoulder_lift_joint" type="revolute">
+    <parent link="shoulder_link"/>
+    <child link="upper_arm_link"/>
+    <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.13585 0.0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="150.0" lower="-6.2831853" upper="6.2831853" velocity="3.14"/>
+  </joint>
+
+  <!-- Upper Arm Link -->
+  <link name="upper_arm_link">
+    <visual>
+      <geometry>
+        <mesh filename="visual/upperarm.dae"/>
+      </geometry>
+      <origin rpy="1.57079632679 0.0 -1.57079632679" xyz="0.0 0.0 0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.425" radius="0.054"/>
+      </geometry>
+      <origin rpy="0.0 1.57079632679 0.0" xyz="0.2125 0.0 0.0"/>
+    </collision>
+  </link>
+
+  <!-- Joint 3: Elbow -->
+  <joint name="elbow_joint" type="revolute">
+    <parent link="upper_arm_link"/>
+    <child link="forearm_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.1197 0.425"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="150.0" lower="-3.14159265" upper="3.14159265" velocity="3.14"/>
+  </joint>
+
+  <!-- Forearm Link -->
+  <link name="forearm_link">
+    <visual>
+      <geometry>
+        <mesh filename="visual/forearm.dae"/>
+      </geometry>
+      <origin rpy="1.57079632679 0.0 -1.57079632679" xyz="0.0 0.0 0.0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.392" radius="0.045"/>
+      </geometry>
+      <origin rpy="0.0 1.57079632679 0.0" xyz="0.196 0.0 0.0"/>
+    </collision>
+  </link>
+
+  <!-- Joint 4: Wrist 1 -->
+  <joint name="wrist_1_joint" type="revolute">
+    <parent link="forearm_link"/>
+    <child link="wrist_1_link"/>
+    <origin rpy="0.0 1.57079632679 0.0" xyz="0.0 0.0 0.39225"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="28.0" lower="-6.2831853" upper="6.2831853" velocity="3.2"/>
+  </joint>
+
+  <!-- Wrist 1 Link -->
+  <link name="wrist_1_link">
+    <visual>
+      <geometry>
+        <mesh filename="visual/wrist1.dae"/>
+      </geometry>
+      <origin rpy="1.57079632679 0.0 0.0" xyz="0.0 0.0 -0.093"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.04"/>
+      </geometry>
+      <origin rpy="1.57079632679 0.0 0.0" xyz="0.0 0.0 -0.093"/>
+    </collision>
+  </link>
+
+  <!-- Joint 5: Wrist 2 -->
+  <joint name="wrist_2_joint" type="revolute">
+    <parent link="wrist_1_link"/>
+    <child link="wrist_2_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.09465 0.0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="28.0" lower="-6.2831853" upper="6.2831853" velocity="3.2"/>
+  </joint>
+
+  <!-- Wrist 2 Link -->
+  <link name="wrist_2_link">
+    <visual>
+      <geometry>
+        <mesh filename="visual/wrist2.dae"/>
+      </geometry>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.09465"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.04"/>
+      </geometry>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.09465"/>
+    </collision>
+  </link>
+
+  <!-- Joint 6: Wrist 3 -->
+  <joint name="wrist_3_joint" type="revolute">
+    <parent link="wrist_2_link"/>
+    <child link="wrist_3_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.09465"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="28.0" lower="-6.2831853" upper="6.2831853" velocity="3.2"/>
+  </joint>
+
+  <!-- Wrist 3 Link -->
+  <link name="wrist_3_link">
+    <visual>
+      <geometry>
+        <mesh filename="visual/wrist3.dae"/>
+      </geometry>
+      <origin rpy="1.57079632679 0.0 0.0" xyz="0.0 0.0 -0.0923"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.038"/>
+      </geometry>
+      <origin rpy="1.57079632679 0.0 0.0" xyz="0.0 0.0 -0.0923"/>
+    </collision>
+  </link>
+
+  <!-- End-Effector / Flange -->
+  <joint name="ee_fixed_joint" type="fixed">
+    <parent link="wrist_3_link"/>
+    <child link="ee_link"/>
+    <origin rpy="0.0 0.0 1.57079632679" xyz="0.0 0.0823 0.0"/>
+  </joint>
+
+  <link name="ee_link">
+    <visual>
+      <geometry>
+        <box size="0.02 0.02 0.02"/>
+      </geometry>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+      <material name="UR/Blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.02 0.02 0.02"/>
+      </geometry>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    </collision>
+  </link>
+</robot>
