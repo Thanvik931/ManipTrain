@@ -18,6 +18,7 @@ const LINK_NAMES = [
 
 let obstacles = [];
 let lastSafeAngles = {};
+let lastCollisionLogTime = 0;
 const tempBox = new THREE.Box3();
 
 /**
@@ -28,20 +29,20 @@ export function createEnvironmentObstacles(scene) {
 
   // 1. Work Table in front of the robot (where scenarios S1/S2/S3 will take place)
   const tableGroup = new THREE.Group();
-  const tableTopGeo = new THREE.BoxGeometry(0.70, 0.03, 0.45);
+  const tableTopGeo = new THREE.BoxGeometry(0.70, 0.03, 0.40);
   const tableMat = new THREE.MeshStandardMaterial({ color: 0x2e3440, roughness: 0.6, metalness: 0.1 });
   const tableTop = new THREE.Mesh(tableTopGeo, tableMat);
-  tableTop.position.set(0.0, 0.16, 0.45); // in front of robot base at +Z
+  tableTop.position.set(0.0, 0.15, 0.52); // in front of robot base at +Z with clean clearance
   tableGroup.add(tableTop);
 
   // Table leg supports down to floor
-  const legGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.145);
+  const legGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.135);
   const legMat = new THREE.MeshStandardMaterial({ color: 0x1f232a });
   const legOffsets = [
-    [ 0.31, 0.0725,  0.64],
-    [-0.31, 0.0725,  0.64],
-    [ 0.31, 0.0725,  0.26],
-    [-0.31, 0.0725,  0.26]
+    [ 0.30, 0.0675,  0.68],
+    [-0.30, 0.0675,  0.68],
+    [ 0.30, 0.0675,  0.36],
+    [-0.30, 0.0675,  0.36]
   ];
   legOffsets.forEach(([x, y, z]) => {
     const leg = new THREE.Mesh(legGeo, legMat);
@@ -54,7 +55,7 @@ export function createEnvironmentObstacles(scene) {
   obstacles.push({ name: 'Work Table', box: tableBox, mesh: tableTop });
 
   // 2. Safety Wall Barrier (acrylic shield on the left side)
-  const wallGeo = new THREE.BoxGeometry(0.02, 0.50, 0.55);
+  const wallGeo = new THREE.BoxGeometry(0.02, 0.45, 0.55);
   const wallMat = new THREE.MeshStandardMaterial({
     color: 0x38bdf8,
     transparent: true,
@@ -62,7 +63,7 @@ export function createEnvironmentObstacles(scene) {
     roughness: 0.2
   });
   const wall = new THREE.Mesh(wallGeo, wallMat);
-  wall.position.set(-0.45, 0.25, 0.40);
+  wall.position.set(-0.48, 0.25, 0.35);
   scene.add(wall);
 
   const wallBox = new THREE.Box3().setFromObject(wall);
@@ -106,7 +107,6 @@ export function checkCollisions(robot, onCollision) {
 
     for (const obs of obstacles) {
       if (tempBox.intersectsBox(obs.box)) {
-        // Calculate impact strength based on angular displacement
         let totalDeltaRad = 0;
         Object.keys(lastSafeAngles).forEach((jName) => {
           const current = robot.joints[jName] ? (robot.joints[jName].angle || 0) : 0;
@@ -114,19 +114,25 @@ export function checkCollisions(robot, onCollision) {
           totalDeltaRad += Math.abs(current - safe);
         });
 
-        // Speed-proportional impact force in Newtons
         const impactN = Number((Math.min(95, Math.max(12, totalDeltaRad * 160 + Math.random() * 5))).toFixed(1));
         const now = new Date();
         const timestamp = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
 
-        // Rollback all joints to last confirmed safe configuration
+        // Rollback all joints to last confirmed safe configuration immediately
         Object.keys(lastSafeAngles).forEach((jName) => {
           robot.setJointValue(jName, lastSafeAngles[jName]);
         });
         robot.updateMatrixWorld(true);
 
         const event = { linkName, obstacleName: obs.name, impactN, timestamp };
-        if (onCollision) onCollision(event);
+
+        // Debounce event logging (at most 1 hit per 250ms) to prevent event flood and preserve 60 FPS
+        const nowMs = performance.now();
+        if (onCollision && (nowMs - lastCollisionLogTime > 250)) {
+          lastCollisionLogTime = nowMs;
+          onCollision(event);
+        }
+
         return { collided: true, event };
       }
     }

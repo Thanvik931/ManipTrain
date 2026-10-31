@@ -38,9 +38,11 @@ renderer.xr.enabled = true;
 document.getElementById('app').appendChild(renderer.domElement);
 document.body.appendChild(VRButton.createButton(renderer));
 
-// 3. Stats.js Monitor
+// 3. Stats.js Performance Monitor (bottom-left corner to avoid title overlap)
 const stats = new Stats();
-stats.dom.style.top = '78px';
+stats.dom.style.position = 'fixed';
+stats.dom.style.top = 'auto';
+stats.dom.style.bottom = '16px';
 stats.dom.style.left = '16px';
 stats.dom.style.zIndex = '100';
 document.body.appendChild(stats.dom);
