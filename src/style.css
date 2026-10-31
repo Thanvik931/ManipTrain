@@ -32,14 +32,13 @@ body {
 }
 .panel-header h2 { font-size: 0.9rem; font-weight: 600; color: #60a5fa; }
 
-#reset-joints-btn, .action-btn {
+#reset-joints-btn {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #e5e7eb; padding: 3px 8px; font-size: 0.75rem;
   border-radius: 4px; cursor: pointer; transition: background 0.15s;
 }
 #reset-joints-btn:hover { background: rgba(239, 68, 68, 0.4); border-color: #ef4444; }
-.action-btn:hover { background: rgba(59, 130, 246, 0.4); border-color: #3b82f6; }
 
 .slider-row { margin-bottom: 6px; padding: 2px 4px; border-radius: 6px; }
 .slider-label-row {
@@ -65,29 +64,31 @@ body {
 .slider-row.limit-hit label { color: #ef4444 !important; font-weight: 700; }
 .slider-row.limit-hit .deg-display { color: #fff !important; background: #dc2626 !important; }
 
-/* FK HUD */
-.fk-section {
-  margin-top: 8px; padding: 8px 10px; background: rgba(0, 0, 0, 0.35);
+/* Sub sections: IK & FK */
+.ik-section, .fk-section {
+  margin-top: 8px; padding: 7px 10px; background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 6px;
 }
-.fk-header {
+.ik-section { border-color: rgba(249, 115, 22, 0.3); }
+.panel-sub-header {
   display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.74rem; color: #93c5fd; margin-bottom: 4px;
+  font-size: 0.74rem; color: #fdba74; margin-bottom: 4px; font-weight: 600;
 }
+.fk-section .panel-sub-header { color: #93c5fd; }
 .fk-badge {
   font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem;
   font-weight: 700; padding: 2px 6px; border-radius: 4px;
 }
 .fk-pass { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
 .fk-warn { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
-.fk-coords {
+.stat-coords {
   font-family: ui-monospace, Menlo, monospace; font-size: 0.68rem;
-  color: #9ca3af; line-height: 1.35; margin-bottom: 6px;
+  color: #9ca3af; line-height: 1.35;
 }
 .csv-download-btn {
-  width: 100%; background: rgba(59, 130, 246, 0.15);
+  width: 100%; margin-top: 4px; background: rgba(59, 130, 246, 0.15);
   border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd;
-  padding: 4px 8px; font-size: 0.72rem; border-radius: 4px;
+  padding: 3px 6px; font-size: 0.7rem; border-radius: 4px;
   cursor: pointer; text-align: center; transition: all 0.15s;
 }
 .csv-download-btn:hover { background: rgba(59, 130, 246, 0.35); color: #fff; }

@@ -1,112 +1,96 @@
 // src/main.js
-// Task 5: 6-DOF UR5 Forward Kinematics verified against Three.js scene graph.
+// Task 7: CCD Inverse Kinematics with draggable 3D target and TransformControls.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import URDFLoader from 'urdf-loader';
-import { setupJointSliders } from './ui/jointSliders.js';
+import { setupJointSliders, updateSlidersFromRobot, updateIKHUD } from './ui/jointSliders.js';
+import { solveCCD } from './kinematics/ik_ccd.js';
 
-// 1. Scene Setup
+// 1. Scene & Camera
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1e1e28);
 
-// 2. Camera Setup
-const camera = new THREE.PerspectiveCamera(
-  50,
-  window.innerWidth / window.innerHeight,
-  0.05,
-  100
-);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 100);
 camera.position.set(1.5, 1.2, 1.8);
 
-// 3. WebGL Renderer
+// 2. Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('app').appendChild(renderer.domElement);
 
-const appContainer = document.getElementById('app');
-appContainer.appendChild(renderer.domElement);
+// 3. OrbitControls
+const orbitControls = new OrbitControls(camera, renderer.domElement);
+orbitControls.enableDamping = true;
+orbitControls.dampingFactor = 0.05;
+orbitControls.target.set(0, 0.4, 0);
 
-// 4. OrbitControls
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.target.set(0, 0.4, 0);
-controls.update();
-
-// 5. Lighting
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-scene.add(ambientLight);
-
+// 4. Lights & Environment
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
 keyLight.position.set(3, 5, 3);
-keyLight.castShadow = true;
 scene.add(keyLight);
+scene.add(new THREE.DirectionalLight(0x88bbff, 0.8));
 
-const fillLight = new THREE.DirectionalLight(0x88bbff, 0.8);
-fillLight.position.set(-3, 3, -3);
-scene.add(fillLight);
-
-// 6. Floor & Reference Grid
-const floorGeometry = new THREE.PlaneGeometry(10, 10);
-const floorMaterial = new THREE.MeshStandardMaterial({
-  color: 0x14141c,
-  roughness: 0.8,
-  metalness: 0.1
-});
-const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x14141c }));
 floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
 scene.add(floor);
+const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
+grid.position.y = 0.001;
+scene.add(grid);
 
-const gridHelper = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
-gridHelper.position.y = 0.001;
-scene.add(gridHelper);
+// 5. Draggable IK Target Sphere & TransformControls
+const targetGeo = new THREE.SphereGeometry(0.025, 24, 24);
+const targetMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0x7c2d12, roughness: 0.3 });
+const targetSphere = new THREE.Mesh(targetGeo, targetMat);
+targetSphere.position.set(0.35, 0.45, 0.25);
+scene.add(targetSphere);
 
-// 7. Visual Marker for Computed FK Position (Green wireframe target)
-const fkMarkerGeo = new THREE.SphereGeometry(0.018, 16, 16);
-const fkMarkerMat = new THREE.MeshBasicMaterial({
-  color: 0x22c55e,
-  wireframe: true,
-  depthTest: false
+const transformControls = new TransformControls(camera, renderer.domElement);
+transformControls.size = 0.6;
+transformControls.attach(targetSphere);
+scene.add(transformControls);
+
+// Disable orbit camera during gizmo drag to prevent camera jitter
+transformControls.addEventListener('dragging-changed', (event) => {
+  orbitControls.enabled = !event.value;
 });
-const fkMarker = new THREE.Mesh(fkMarkerGeo, fkMarkerMat);
-fkMarker.renderOrder = 999;
-scene.add(fkMarker);
 
-// 8. Load UR5 Robot
+// 6. Robot & CCD Solver Integration
 let robotArm = null;
 const loader = new URDFLoader();
 
-loader.load(
-  '/models/ur5/ur5.urdf',
-  (robot) => {
-    robotArm = robot;
-    robot.rotation.x = -Math.PI / 2;
-    robot.position.set(0, 0, 0);
-    scene.add(robot);
+loader.load('/models/ur5/ur5.urdf', (robot) => {
+  robotArm = robot;
+  robot.rotation.x = -Math.PI / 2;
+  robot.position.set(0, 0, 0);
+  scene.add(robot);
 
-    // Initialize sliders and bind FK marker update callback
-    setupJointSliders(robot, (computedTip) => {
-      fkMarker.position.copy(computedTip);
-    });
+  setupJointSliders(robot);
 
-    const overlaySub = document.querySelector('#overlay-info p');
-    if (overlaySub) {
-      overlaySub.textContent = 'Task 6: Python FK Cross-Validation';
-    }
+  // Run initial CCD solve toward target
+  runIKSolve();
 
-    console.log('%c🎯 ManipTrain: FK verification active (< 1 mm target)', 'color: #22c55e; font-weight: bold;');
-  },
-  undefined,
-  (error) => {
-    console.error('Failed to load robot:', error);
-  }
-);
+  const overlaySub = document.querySelector('#overlay-info p');
+  if (overlaySub) overlaySub.textContent = 'Task 7: Inverse Kinematics (CCD Solver)';
+  console.log('%c🎯 ManipTrain: CCD IK solver ready. Drag target gizmo!', 'color: #f97316; font-weight: bold;');
+});
 
-// 9. Resize & Render Loop
+function runIKSolve() {
+  if (!robotArm) return;
+  const result = solveCCD(robotArm, targetSphere.position, { maxIterations: 20, toleranceMeters: 0.005 });
+  updateSlidersFromRobot(robotArm);
+  updateIKHUD(targetSphere.position, result.finalDistanceMm, result.iterations, result.reached);
+}
+
+transformControls.addEventListener('change', () => {
+  runIKSolve();
+});
+
+// 7. Render Loop
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -115,7 +99,7 @@ window.addEventListener('resize', () => {
 
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
+  orbitControls.update();
   renderer.render(scene, camera);
 }
 

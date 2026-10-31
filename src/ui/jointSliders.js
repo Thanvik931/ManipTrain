@@ -1,14 +1,15 @@
 // src/ui/jointSliders.js
-// Task 6: Sliders with real-time FK validation and 20-pose CSV export for Python verification.
+// Task 7: Sliders, FK validation, and real-time CCD Inverse Kinematics HUD.
 
 import { jointLimits, clampJointAngle, onLimitHit } from '../kinematics/jointLimiter.js';
 import { forwardKinematicsUR5, compareFKWithThree } from '../kinematics/fk.js';
 
 const DEG2RAD = Math.PI / 180;
+const RAD2DEG = 180 / Math.PI;
 
-/**
- * Creates floating HTML sliders for all movable joints of the robot arm.
- */
+let currentSliders = {};
+let movableJointsList = [];
+
 export function setupJointSliders(robot, onFKCalculated) {
   const existing = document.getElementById('joint-controls');
   if (existing) existing.remove();
@@ -17,19 +18,26 @@ export function setupJointSliders(robot, onFKCalculated) {
   panel.id = 'joint-controls';
   panel.innerHTML = `
     <div class="panel-header">
-      <h2>Joint Controls (6-DOF)</h2>
+      <h2>ManipTrain Controls (6-DOF)</h2>
       <button id="reset-joints-btn" title="Reset all joints to 0°">Reset</button>
     </div>
     <div id="sliders-list"></div>
 
-    <div class="fk-section">
-      <div class="fk-header">
-        <span>FK vs Three.js Accuracy</span>
-        <span id="fk-badge" class="fk-badge fk-pass">0.0 mm</span>
+    <div class="ik-section">
+      <div class="panel-sub-header">
+        <span>IK Solver (CCD Target Chasing)</span>
+        <span id="ik-badge" class="fk-badge fk-pass">0.0 mm</span>
       </div>
-      <div class="fk-coords">
-        <div><b>Three.js:</b> <span id="pos-three">X: 0.00 Y: 0.00 Z: 0.00</span></div>
-        <div><b>FK Math:</b> <span id="pos-fk">X: 0.00 Y: 0.00 Z: 0.00</span></div>
+      <div class="stat-coords">
+        <div><b>Target:</b> <span id="ik-target-pos">X:0.40 Y:0.40 Z:0.20</span></div>
+        <div><b>Iterations:</b> <span id="ik-iters">0 / 20</span></div>
+      </div>
+    </div>
+
+    <div class="fk-section">
+      <div class="panel-sub-header">
+        <span>FK vs Three.js Verification</span>
+        <span id="fk-badge" class="fk-badge fk-pass">0.0 mm</span>
       </div>
       <button id="download-fk-csv-btn" class="csv-download-btn">⬇ Download 20 FK Poses (CSV)</button>
     </div>
@@ -47,41 +55,32 @@ export function setupJointSliders(robot, onFKCalculated) {
   const slidersList = panel.querySelector('#sliders-list');
   const logFeed = panel.querySelector('#limit-log-feed');
   const logCount = panel.querySelector('#log-count');
-  const posThreeEl = panel.querySelector('#pos-three');
-  const posFkEl = panel.querySelector('#pos-fk');
   const fkBadgeEl = panel.querySelector('#fk-badge');
-  const downloadBtn = panel.querySelector('#download-fk-csv-btn');
 
-  const movableJoints = Object.values(robot.joints).filter(
+  movableJointsList = Object.values(robot.joints).filter(
     (j) => j.jointType === 'revolute' || j.jointType === 'continuous'
   );
 
-  const sliderControls = {};
+  currentSliders = {};
   let totalHits = 0;
 
-  function getCurrentAnglesRad() {
+  function updateFKVerification() {
     const anglesRad = {};
-    movableJoints.forEach((j) => {
-      const val = sliderControls[j.name] ? parseFloat(sliderControls[j.name].input.value) : 0;
+    movableJointsList.forEach((j) => {
+      const val = currentSliders[j.name] ? parseFloat(currentSliders[j.name].input.value) : 0;
       anglesRad[j.name] = val * DEG2RAD;
     });
-    return anglesRad;
-  }
 
-  function updateFKVerification() {
-    const anglesRad = getCurrentAnglesRad();
     const computedTip = forwardKinematicsUR5(anglesRad);
-    const { errorMm, groundTruth } = compareFKWithThree(robot, computedTip);
+    const { errorMm } = compareFKWithThree(robot, computedTip);
 
-    posThreeEl.textContent = `X:${groundTruth.x.toFixed(3)} Y:${groundTruth.y.toFixed(3)} Z:${groundTruth.z.toFixed(3)}`;
-    posFkEl.textContent = `X:${computedTip.x.toFixed(3)} Y:${computedTip.y.toFixed(3)} Z:${computedTip.z.toFixed(3)}`;
     fkBadgeEl.textContent = `Δ ${errorMm.toFixed(2)} mm`;
     fkBadgeEl.className = errorMm <= 1.0 ? 'fk-badge fk-pass' : 'fk-badge fk-warn';
 
     if (onFKCalculated) onFKCalculated(computedTip);
   }
 
-  movableJoints.forEach((joint) => {
+  movableJointsList.forEach((joint) => {
     const cfg = jointLimits[joint.name] || { minDeg: -360, maxDeg: 360, label: joint.name };
     const row = document.createElement('div');
     row.className = 'slider-row';
@@ -113,7 +112,7 @@ export function setupJointSliders(robot, onFKCalculated) {
       updateFKVerification();
     });
 
-    sliderControls[joint.name] = { input, display, row };
+    currentSliders[joint.name] = { input, display, row };
     slidersList.appendChild(row);
   });
 
@@ -129,8 +128,8 @@ export function setupJointSliders(robot, onFKCalculated) {
   });
 
   panel.querySelector('#reset-joints-btn').addEventListener('click', () => {
-    Object.keys(sliderControls).forEach((name) => {
-      const { input, display, row } = sliderControls[name];
+    Object.keys(currentSliders).forEach((name) => {
+      const { input, display, row } = currentSliders[name];
       input.value = '0';
       display.textContent = '0.0°';
       row.classList.remove('limit-hit');
@@ -139,29 +138,47 @@ export function setupJointSliders(robot, onFKCalculated) {
     updateFKVerification();
   });
 
-  // Export 20 poses CSV for Python check_fk.py
-  downloadBtn.addEventListener('click', () => {
-    exportFKPosesCSV(movableJoints, sliderControls);
+  panel.querySelector('#download-fk-csv-btn').addEventListener('click', () => {
+    exportFKPosesCSV();
   });
 
   setTimeout(updateFKVerification, 50);
 }
 
 /**
- * Generates and downloads a CSV of 20 joint configurations and JS FK results.
+ * Updates UI sliders and badges to mirror IK solved joint angles.
  */
-function exportFKPosesCSV(joints, sliderControls) {
-  const rows = ['pose_id,q1_deg,q2_deg,q3_deg,q4_deg,q5_deg,q6_deg,js_x,js_y,js_z'];
-  const testAngles = [
-    [0, 0, 0, 0, 0, 0],
-    [45, -30, 60, 0, 45, 0],
-    [-90, 45, -45, 90, -90, 45],
-    [180, -90, 90, -45, 45, -90],
-    [-45, -60, -60, -60, 90, 0]
-  ];
+export function updateSlidersFromRobot(robot) {
+  movableJointsList.forEach((j) => {
+    const s = currentSliders[j.name];
+    if (s && j.angle !== undefined) {
+      const deg = j.angle * RAD2DEG;
+      s.input.value = deg.toFixed(1);
+      s.display.textContent = `${deg.toFixed(1)}°`;
+    }
+  });
+}
 
+/**
+ * Updates IK solver telemetry display in HUD.
+ */
+export function updateIKHUD(targetPos, distanceMm, iters, reached) {
+  const targetPosEl = document.getElementById('ik-target-pos');
+  const itersEl = document.getElementById('ik-iters');
+  const badgeEl = document.getElementById('ik-badge');
+
+  if (targetPosEl) targetPosEl.textContent = `X:${targetPos.x.toFixed(2)} Y:${targetPos.y.toFixed(2)} Z:${targetPos.z.toFixed(2)}`;
+  if (itersEl) itersEl.textContent = `${iters} / 20 iters`;
+  if (badgeEl) {
+    badgeEl.textContent = `${distanceMm.toFixed(1)} mm`;
+    badgeEl.className = reached ? 'fk-badge fk-pass' : 'fk-badge fk-warn';
+  }
+}
+
+function exportFKPosesCSV() {
+  const rows = ['pose_id,q1_deg,q2_deg,q3_deg,q4_deg,q5_deg,q6_deg,js_x,js_y,js_z'];
   for (let i = 0; i < 20; i++) {
-    const q = testAngles[i] || [
+    const q = [
       (Math.random() * 360 - 180).toFixed(1),
       (Math.random() * 180 - 120).toFixed(1),
       (Math.random() * 300 - 150).toFixed(1),
@@ -181,12 +198,9 @@ function exportFKPosesCSV(joints, sliderControls) {
     const tip = forwardKinematicsUR5(rads);
     rows.push(`${i + 1},${q[0]},${q[1]},${q[2]},${q[3]},${q[4]},${q[5]},${tip.x.toFixed(6)},${tip.y.toFixed(6)},${tip.z.toFixed(6)}`);
   }
-
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = URL.createObjectURL(blob);
   a.download = 'fk_poses.csv';
   a.click();
-  URL.revokeObjectURL(url);
 }
