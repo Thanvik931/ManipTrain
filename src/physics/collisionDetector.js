@@ -141,3 +141,4 @@ export function checkCollisions(robot, onCollision) {
 
   return { collided: false };
 }
+
