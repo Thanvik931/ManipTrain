@@ -1,5 +1,5 @@
 // src/main.js
-// Task 13: Scenario S1 - Pick and place 3 colored blocks with live timer, bump counter, and IK.
+// Task 14: Scenario S2 suspect-object handling (EOD tilt limit <15 deg) & S1 switcher.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -24,6 +24,7 @@ import {
 } from './physics/collisionDetector.js';
 import { attachGripper, updateGrip, syncHeldObject, updateGravity } from './physics/gripper.js';
 import { initScenarioS1, recordS1Bump, updateS1 } from './scenarios/s1_pick_place.js';
+import { initScenarioS2, recordS2Bump, updateS2 } from './scenarios/s2_suspect_object.js';
 
 // 1. Scene & Perspective Camera
 const scene = new THREE.Scene();
@@ -70,11 +71,15 @@ const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
 grid.position.y = 0.001;
 scene.add(grid);
 
-// 6. Obstacles & Scenario S1 Initialization
+// 6. Obstacles & Scenario Selection (Defaults to S2)
 createEnvironmentObstacles(scene);
-initScenarioS1(scene, (result) => {
-  console.log(`%c🎉 S1 Complete! Time: ${result.time.toFixed(1)}s | Bumps: ${result.bumps}`, 'color:#4ade80; font-weight:bold;');
-});
+let currentScenario = 'S2';
+
+function loadScenario(type) {
+  currentScenario = type;
+  if (type === 'S1') initScenarioS1(scene, (r) => console.log('S1:', r));
+  else initScenarioS2(scene, (r) => console.log('S2:', r));
+}
 
 // 7. Target Sphere & TransformControls
 const targetGeo = new THREE.SphereGeometry(0.022, 24, 24);
@@ -108,6 +113,7 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   attachGripper(eeLink);
   initSafeAngles(robot);
 
+  loadScenario('S2');
   syncTargetToWrist();
   setupJointSliders(
     robot,
@@ -121,8 +127,8 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   );
 
   const overlaySub = document.querySelector('#overlay-info p');
-  if (overlaySub) overlaySub.textContent = 'Task 13: Scenario S1 (Pick-and-Place 3 Blocks)';
-  console.log('%c🎯 ManipTrain: S1 Pick-and-Place ready.', 'color: #f97316; font-weight: bold;');
+  if (overlaySub) overlaySub.textContent = 'Task 14: Scenario S2 (Suspect Object EOD Tilt)';
+  console.log('%c🎯 ManipTrain: S2 Suspect Object ready.', 'color: #f97316; font-weight: bold;');
 });
 
 function syncTargetToWrist() {
@@ -142,7 +148,8 @@ function resetToHome() {
 
 function handleCollision(event) {
   logCollisionEvent(event);
-  recordS1Bump();
+  if (currentScenario === 'S1') recordS1Bump();
+  else recordS2Bump();
 }
 
 function onManualSliderMove() {
@@ -170,7 +177,7 @@ function runActiveIKSolver() {
 
 transformControls.addEventListener('change', () => runActiveIKSolver());
 
-// 9. Operator Controls (Keyboard, Grip Force, & WebXR)
+// 9. Operator Controls
 const operator = setupOperatorControls({
   scene,
   renderer,
@@ -191,7 +198,8 @@ renderer.setAnimationLoop(() => {
   if (operator) operator.updateXR();
   syncHeldObject();
   updateGravity(0.016);
-  updateS1();
+  if (currentScenario === 'S1') updateS1();
+  else updateS2();
   orbitControls.update();
   renderer.render(scene, camera);
   stats.end();
