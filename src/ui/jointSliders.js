@@ -1,15 +1,17 @@
 // src/ui/jointSliders.js
-// Task 4: Sliders with central limit clamping, red flashing, and timestamped hit logging.
+// Task 5: Sliders with real-time Forward Kinematics (FK) vs Three.js ground truth verification.
 
 import { jointLimits, clampJointAngle, onLimitHit } from '../kinematics/jointLimiter.js';
+import { forwardKinematicsUR5, compareFKWithThree } from '../kinematics/fk.js';
 
 const DEG2RAD = Math.PI / 180;
 
 /**
  * Creates floating HTML sliders for all movable joints of the robot arm.
  * @param {URDFRobot} robot - The loaded Three.js URDF robot instance
+ * @param {Function} [onFKCalculated] - Optional callback passing computed FK tip vector
  */
-export function setupJointSliders(robot) {
+export function setupJointSliders(robot, onFKCalculated) {
   const existing = document.getElementById('joint-controls');
   if (existing) existing.remove();
 
@@ -17,16 +19,29 @@ export function setupJointSliders(robot) {
   panel.id = 'joint-controls';
   panel.innerHTML = `
     <div class="panel-header">
-      <h2>Joint Controls & Limits</h2>
+      <h2>Joint Controls (6-DOF)</h2>
       <button id="reset-joints-btn" title="Reset all joints to 0°">Reset</button>
     </div>
     <div id="sliders-list"></div>
+
+    <!-- Real-time Forward Kinematics Verification HUD -->
+    <div class="fk-section">
+      <div class="fk-header">
+        <span>FK vs Three.js Accuracy</span>
+        <span id="fk-badge" class="fk-badge fk-pass">0.0 mm</span>
+      </div>
+      <div class="fk-coords">
+        <div><b>Three.js:</b> <span id="pos-three">X: 0.00 Y: 0.00 Z: 0.00</span></div>
+        <div><b>FK Math:</b> <span id="pos-fk">X: 0.00 Y: 0.00 Z: 0.00</span></div>
+      </div>
+    </div>
+
     <div class="log-section">
       <div class="log-header">
         <span>Limit Violation Log</span>
         <span id="log-count">0 hits</span>
       </div>
-      <div id="limit-log-feed">Waiting for input...</div>
+      <div id="limit-log-feed">No violations</div>
     </div>
   `;
   document.body.appendChild(panel);
@@ -34,6 +49,9 @@ export function setupJointSliders(robot) {
   const slidersList = panel.querySelector('#sliders-list');
   const logFeed = panel.querySelector('#limit-log-feed');
   const logCount = panel.querySelector('#log-count');
+  const posThreeEl = panel.querySelector('#pos-three');
+  const posFkEl = panel.querySelector('#pos-fk');
+  const fkBadgeEl = panel.querySelector('#fk-badge');
 
   const movableJoints = Object.values(robot.joints).filter(
     (j) => j.jointType === 'revolute' || j.jointType === 'continuous'
@@ -42,10 +60,35 @@ export function setupJointSliders(robot) {
   const sliderControls = {};
   let totalHits = 0;
 
+  function updateFKVerification() {
+    // Collect current joint angles
+    const anglesRad = {};
+    movableJoints.forEach((j) => {
+      const val = sliderControls[j.name] ? parseFloat(sliderControls[j.name].input.value) : 0;
+      anglesRad[j.name] = val * DEG2RAD;
+    });
+
+    // 1. Run our manual FK computation
+    const computedTip = forwardKinematicsUR5(anglesRad);
+    // 2. Compare against Three.js scene graph world position
+    const { errorMm, groundTruth } = compareFKWithThree(robot, computedTip);
+
+    posThreeEl.textContent = `X:${groundTruth.x.toFixed(3)} Y:${groundTruth.y.toFixed(3)} Z:${groundTruth.z.toFixed(3)}`;
+    posFkEl.textContent = `X:${computedTip.x.toFixed(3)} Y:${computedTip.y.toFixed(3)} Z:${computedTip.z.toFixed(3)}`;
+    fkBadgeEl.textContent = `Δ ${errorMm.toFixed(2)} mm`;
+
+    if (errorMm <= 1.0) {
+      fkBadgeEl.className = 'fk-badge fk-pass';
+    } else {
+      fkBadgeEl.className = 'fk-badge fk-warn';
+    }
+
+    if (onFKCalculated) onFKCalculated(computedTip);
+  }
+
   movableJoints.forEach((joint) => {
-    // Read single source of truth from jointLimits.json
     const cfg = jointLimits[joint.name] || { minDeg: -360, maxDeg: 360, label: joint.name };
-    const buffer = 15; // 15° overdrag room so dragging past limit is demonstrable
+    const buffer = 15;
 
     const row = document.createElement('div');
     row.className = 'slider-row';
@@ -70,28 +113,26 @@ export function setupJointSliders(robot) {
 
     input.addEventListener('input', (e) => {
       const requestedDeg = parseFloat(e.target.value);
-      // Central clamping enforcement
       const { clampedDeg, isAtLimit } = clampJointAngle(joint.name, requestedDeg);
 
-      // Display clamped value and drive robot
       display.textContent = `${clampedDeg.toFixed(1)}°`;
       robot.setJointValue(joint.name, clampedDeg * DEG2RAD);
 
-      // Trigger red flash when limit is hit or exceeded
       if (isAtLimit) {
         row.classList.remove('limit-hit');
-        void row.offsetWidth; // Force CSS animation restart
+        void row.offsetWidth;
         row.classList.add('limit-hit');
       } else {
         row.classList.remove('limit-hit');
       }
+
+      updateFKVerification();
     });
 
     sliderControls[joint.name] = { input, display, row };
     slidersList.appendChild(row);
   });
 
-  // Listen to limit violations and update real-time feed
   onLimitHit((entry) => {
     totalHits += 1;
     logCount.textContent = `${totalHits} hit${totalHits === 1 ? '' : 's'}`;
@@ -103,7 +144,6 @@ export function setupJointSliders(robot) {
     `;
   });
 
-  // Reset button returns arm to zero
   panel.querySelector('#reset-joints-btn').addEventListener('click', () => {
     Object.keys(sliderControls).forEach((name) => {
       const { input, display, row } = sliderControls[name];
@@ -112,5 +152,9 @@ export function setupJointSliders(robot) {
       row.classList.remove('limit-hit');
       robot.setJointValue(name, 0);
     });
+    updateFKVerification();
   });
+
+  // Initial calculation at home pose
+  setTimeout(updateFKVerification, 50);
 }

@@ -1,5 +1,5 @@
 // src/main.js
-// Task 3: Control each of the 6 robot arm joints using interactive UI sliders.
+// Task 5: 6-DOF UR5 Forward Kinematics verified against Three.js scene graph.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -29,14 +29,14 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const appContainer = document.getElementById('app');
 appContainer.appendChild(renderer.domElement);
 
-// 4. OrbitControls: left-drag rotate, scroll zoom, right-drag pan
+// 4. OrbitControls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.target.set(0, 0.4, 0);
 controls.update();
 
-// 5. Lighting: key, fill, and ambient
+// 5. Lighting
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 scene.add(ambientLight);
 
@@ -65,7 +65,18 @@ const gridHelper = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
 gridHelper.position.y = 0.001;
 scene.add(gridHelper);
 
-// 7. Load UR5 Robot via URDFLoader
+// 7. Visual Marker for Computed FK Position (Green wireframe target)
+const fkMarkerGeo = new THREE.SphereGeometry(0.018, 16, 16);
+const fkMarkerMat = new THREE.MeshBasicMaterial({
+  color: 0x22c55e,
+  wireframe: true,
+  depthTest: false
+});
+const fkMarker = new THREE.Mesh(fkMarkerGeo, fkMarkerMat);
+fkMarker.renderOrder = 999;
+scene.add(fkMarker);
+
+// 8. Load UR5 Robot
 let robotArm = null;
 const loader = new URDFLoader();
 
@@ -73,42 +84,35 @@ loader.load(
   '/models/ur5/ur5.urdf',
   (robot) => {
     robotArm = robot;
-
-    // Convert ROS coordinate frame (Z-up) to Three.js (Y-up)
     robot.rotation.x = -Math.PI / 2;
     robot.position.set(0, 0, 0);
     scene.add(robot);
 
-    // Initialize the interactive 6-DOF slider controls
-    setupJointSliders(robot);
+    // Initialize sliders and bind FK marker update callback
+    setupJointSliders(robot, (computedTip) => {
+      fkMarker.position.copy(computedTip);
+    });
 
-    // Update overlay status
     const overlaySub = document.querySelector('#overlay-info p');
     if (overlaySub) {
-      overlaySub.textContent = 'Task 4: Joint Limits & Event Logging';
+      overlaySub.textContent = 'Task 5: Forward Kinematics (FK) Verified';
     }
 
-    console.log('%c🤖 ManipTrain: Ready! Use sliders to manipulate joints.', 'color: #4ade80; font-weight: bold;');
+    console.log('%c🎯 ManipTrain: FK verification active (< 1 mm target)', 'color: #22c55e; font-weight: bold;');
   },
   undefined,
   (error) => {
-    console.error('Failed to load URDF robot:', error);
-    const overlaySub = document.querySelector('#overlay-info p');
-    if (overlaySub) {
-      overlaySub.textContent = 'Error loading robot model. Check console.';
-      overlaySub.style.color = '#ef4444';
-    }
+    console.error('Failed to load robot:', error);
   }
 );
 
-// 8. Window Resize Handler
+// 9. Resize & Render Loop
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// 9. Animation Loop
 function animate() {
   requestAnimationFrame(animate);
   controls.update();

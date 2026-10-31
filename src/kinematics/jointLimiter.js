@@ -83,3 +83,4 @@ function recordLimitHit(jointName, requestedDeg, clampedDeg, limitType, label) {
     'color: #d1d5db;'
   );
 }
+
