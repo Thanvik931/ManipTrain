@@ -1,5 +1,5 @@
 // src/ui/jointSliders.js
-// Task 8: 6-DOF controls with CCD/DLS solver toggle, FK badge, and limits log.
+// Task 11: 6-DOF controls with CCD/DLS toggle, FK verification, and collision log feed.
 
 import { jointLimits, clampJointAngle, onLimitHit } from '../kinematics/jointLimiter.js';
 import { forwardKinematicsUR5, compareFKWithThree } from '../kinematics/fk.js';
@@ -10,7 +10,7 @@ const RAD2DEG = 180 / Math.PI;
 
 let currentSliders = {};
 let movableJointsList = [];
-let currentSolver = 'CCD';
+let totalHits = 0;
 
 export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, onSolverChange) {
   const existing = document.getElementById('joint-controls');
@@ -51,10 +51,10 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
 
     <div class="log-section">
       <div class="log-header">
-        <span>Limit Violation Log</span>
+        <span>Safety & Collision Log</span>
         <span id="log-count">0 hits</span>
       </div>
-      <div id="limit-log-feed">No violations</div>
+      <div id="limit-log-feed">Safe — no collisions</div>
     </div>
   `;
   document.body.appendChild(panel);
@@ -72,7 +72,7 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
   );
 
   currentSliders = {};
-  let totalHits = 0;
+  totalHits = 0;
 
   function updateFKVerification() {
     const anglesRad = {};
@@ -83,7 +83,6 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
 
     const computedTip = forwardKinematicsUR5(anglesRad);
     const { errorMm } = compareFKWithThree(robot, computedTip);
-
     fkBadgeEl.textContent = `Δ ${errorMm.toFixed(2)} mm`;
     fkBadgeEl.className = errorMm <= 1.0 ? 'fk-badge fk-pass' : 'fk-badge fk-warn';
 
@@ -112,13 +111,7 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
       display.textContent = `${clampedDeg.toFixed(1)}°`;
       robot.setJointValue(joint.name, clampedDeg * DEG2RAD);
 
-      if (isAtLimit) {
-        row.classList.remove('limit-hit');
-        void row.offsetWidth;
-        row.classList.add('limit-hit');
-      } else {
-        row.classList.remove('limit-hit');
-      }
+      row.classList.toggle('limit-hit', isAtLimit);
       updateFKVerification();
       if (onTargetSync) onTargetSync();
     });
@@ -127,26 +120,19 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
     slidersList.appendChild(row);
   });
 
-  // Solver mode selection
   function setSolver(mode) {
-    currentSolver = mode;
     solverNameEl.textContent = mode;
-    if (mode === 'CCD') {
-      btnCCD.classList.add('active');
-      btnDLS.classList.remove('active');
-    } else {
-      btnDLS.classList.add('active');
-      btnCCD.classList.remove('active');
-    }
+    btnCCD.classList.toggle('active', mode === 'CCD');
+    btnDLS.classList.toggle('active', mode === 'DLS');
     if (onSolverChange) onSolverChange(mode);
   }
 
-  btnCCD.addEventListener('click', () => setSolver('CCD'));
-  btnDLS.addEventListener('click', () => setSolver('DLS'));
+  btnCCD.onclick = () => setSolver('CCD');
+  btnDLS.onclick = () => setSolver('DLS');
 
   onLimitHit((entry) => {
     totalHits += 1;
-    logCount.textContent = `${totalHits} hit${totalHits === 1 ? '' : 's'}`;
+    logCount.textContent = `${totalHits} hits`;
     logFeed.innerHTML = `
       <div class="log-entry">
         <span class="log-time">[${entry.timestamp}]</span>
@@ -155,31 +141,43 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
     `;
   });
 
-  panel.querySelector('#reset-joints-btn').addEventListener('click', () => {
+  panel.querySelector('#reset-joints-btn').onclick = () => {
     Object.keys(currentSliders).forEach((name) => {
-      const { input, display, row } = currentSliders[name];
-      input.value = '0';
-      display.textContent = '0.0°';
-      row.classList.remove('limit-hit');
+      currentSliders[name].input.value = '0';
+      currentSliders[name].display.textContent = '0.0°';
+      currentSliders[name].row.classList.remove('limit-hit');
       robot.setJointValue(name, 0);
     });
     robot.updateMatrixWorld(true);
     updateFKVerification();
     if (onReset) onReset();
-  });
+  };
 
-  panel.querySelector('#download-fk-csv-btn').addEventListener('click', () => {
-    exportFKPosesCSV();
-  });
-
-  panel.querySelector('#download-ik-csv-btn').addEventListener('click', () => {
-    exportIKPosesCSV(robot, () => {
-      updateFKVerification();
-      if (onReset) onReset();
-    });
+  panel.querySelector('#download-fk-csv-btn').onclick = () => exportFKPosesCSV();
+  panel.querySelector('#download-ik-csv-btn').onclick = () => exportIKPosesCSV(robot, () => {
+    updateFKVerification();
+    if (onReset) onReset();
   });
 
   setTimeout(updateFKVerification, 50);
+}
+
+export function logCollisionEvent(event) {
+  totalHits += 1;
+  const feed = document.getElementById('limit-log-feed');
+  const count = document.getElementById('log-count');
+  if (count) count.textContent = `${totalHits} hits`;
+  if (feed) {
+    feed.innerHTML = `
+      <div class="log-entry">
+        <span class="log-time">[${event.timestamp}]</span>
+        <span class="log-msg"><b style="color:#ef4444">💥 ${event.linkName}</b> hit ${event.obstacleName} (${event.impactN} N)</span>
+      </div>
+    `;
+    feed.classList.remove('limit-hit');
+    void feed.offsetWidth;
+    feed.classList.add('limit-hit');
+  }
 }
 
 export function updateSlidersFromRobot(robot) {
@@ -198,9 +196,7 @@ export function updateIKHUD(targetPos, distanceMm, iters, reached) {
   const itersEl = document.getElementById('ik-iters');
   const badgeEl = document.getElementById('ik-badge');
 
-  if (targetPosEl) {
-    targetPosEl.textContent = `X:${targetPos.x.toFixed(2)} Y:${targetPos.y.toFixed(2)} Z:${targetPos.z.toFixed(2)}`;
-  }
+  if (targetPosEl) targetPosEl.textContent = `X:${targetPos.x.toFixed(2)} Y:${targetPos.y.toFixed(2)} Z:${targetPos.z.toFixed(2)}`;
   if (itersEl) itersEl.textContent = `${iters} iters`;
   if (badgeEl) {
     badgeEl.textContent = `${distanceMm.toFixed(1)} mm`;

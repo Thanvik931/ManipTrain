@@ -122,3 +122,4 @@ function toggleGripper(callback) {
   }
   if (callback) callback(isGripperClosed);
 }
+

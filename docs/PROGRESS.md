@@ -12,4 +12,5 @@ Record of completed tasks, dates, and milestones.
 - 31 Oct 2026: Task 8 - Implemented Damped Least Squares (DLS) Inverse Kinematics solver with numerical Jacobian, singularity damping, interactive CCD/DLS UI toggle, and sub-millimeter precision.
 - 31 Oct 2026: Task 9 - Created Python check_ik.py and automated 50-target IK CSV export; validated 100% compliance with mean error 0.132 mm (< 1 mm target) and generated error distribution chart.
 - 31 Oct 2026: Task 10 - Integrated multi-modal operator controls: desktop mouse/TransformControls, keyboard nudging (W/A/S/D/Q/E), Space/G gripper toggle, WebXR VR controller 6-DOF tracking, and live stats.js FPS monitor (60 FPS).
+- 31 Oct 2026: Task 11 - Implemented simplified AABB link collision detection against table, safety shield, and floor; added automatic rollback to last safe posture, visual flash warning, and speed-proportional impact force logging.
 

@@ -1,5 +1,5 @@
 // src/main.js
-// Task 10: Operator controls (desktop, keyboard, WebXR VR controller, stats.js).
+// Task 11: Simplified link AABB collisions, obstacles, and impact logging.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -7,32 +7,41 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import URDFLoader from 'urdf-loader';
-import { setupJointSliders, updateSlidersFromRobot, updateIKHUD } from './ui/jointSliders.js';
+import {
+  setupJointSliders,
+  updateSlidersFromRobot,
+  updateIKHUD,
+  logCollisionEvent
+} from './ui/jointSliders.js';
 import { setupOperatorControls } from './ui/operatorControls.js';
 import { solveCCD } from './kinematics/ik_ccd.js';
 import { solveDLS } from './kinematics/ik_dls.js';
+import {
+  createEnvironmentObstacles,
+  initSafeAngles,
+  checkCollisions
+} from './physics/collisionDetector.js';
 
-// 1. Three.js Scene & Perspective Camera
+// 1. Scene & Camera
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1e1e28);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 100);
 camera.position.set(1.5, 1.2, 1.8);
 
-// 2. WebGL Renderer with WebXR enabled
+// 2. WebGL Renderer with WebXR
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.xr.enabled = true; // Enables WebXR immersive sessions
+renderer.xr.enabled = true;
 document.getElementById('app').appendChild(renderer.domElement);
 document.body.appendChild(VRButton.createButton(renderer));
 
-// 3. Stats.js FPS Performance Counter
+// 3. Stats.js Monitor
 const stats = new Stats();
 stats.dom.style.top = '65px';
 stats.dom.style.left = '12px';
-stats.dom.style.zIndex = '100';
 document.body.appendChild(stats.dom);
 
 // 4. OrbitControls
@@ -41,7 +50,7 @@ orbitControls.enableDamping = true;
 orbitControls.dampingFactor = 0.05;
 orbitControls.target.set(0, 0.4, 0);
 
-// 5. Lighting & Ground Grid
+// 5. Lights & Floor
 scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
 keyLight.position.set(3, 5, 3);
@@ -55,7 +64,10 @@ const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
 grid.position.y = 0.001;
 scene.add(grid);
 
-// 6. Target Sphere & TransformControls
+// 6. Obstacles (Work Table, Legs, Safety Shield, Floor)
+createEnvironmentObstacles(scene);
+
+// 7. Target Sphere & TransformControls
 const targetGeo = new THREE.SphereGeometry(0.022, 24, 24);
 const targetMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0x7c2d12, roughness: 0.3 });
 const targetSphere = new THREE.Mesh(targetGeo, targetMat);
@@ -66,11 +78,11 @@ transformControls.size = 0.6;
 transformControls.attach(targetSphere);
 scene.add(transformControls);
 
-transformControls.addEventListener('dragging-changed', (event) => {
-  orbitControls.enabled = !event.value;
+transformControls.addEventListener('dragging-changed', (e) => {
+  orbitControls.enabled = !e.value;
 });
 
-// 7. Robot Loading & Bidirectional Sync
+// 8. Robot Loading & Bidirectional Sync
 let robotArm = null;
 let eeLink = null;
 let activeSolver = 'CCD';
@@ -84,13 +96,13 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
 
   robot.updateMatrixWorld(true);
   eeLink = robot.links['ee_link'] || robot.links['wrist_3_link'];
+  initSafeAngles(robot);
 
   syncTargetToWrist();
-
   setupJointSliders(
     robot,
     null,
-    () => syncTargetToWrist(),
+    () => onManualSliderMove(),
     () => resetToHome(),
     (mode) => {
       activeSolver = mode;
@@ -99,8 +111,8 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   );
 
   const overlaySub = document.querySelector('#overlay-info p');
-  if (overlaySub) overlaySub.textContent = 'Task 10: Operator Controls (Desktop, WebXR, Stats)';
-  console.log('%c🎯 ManipTrain: Desktop & WebXR operator controls ready.', 'color: #f97316; font-weight: bold;');
+  if (overlaySub) overlaySub.textContent = 'Task 11: Simplified Collisions & Impact Logging';
+  console.log('%c🎯 ManipTrain: Obstacles & collision detection active.', 'color: #f97316; font-weight: bold;');
 });
 
 function syncTargetToWrist() {
@@ -112,47 +124,57 @@ function syncTargetToWrist() {
 
 function resetToHome() {
   if (!robotArm || !eeLink) return;
+  initSafeAngles(robotArm);
   robotArm.updateMatrixWorld(true);
   eeLink.getWorldPosition(targetSphere.position);
   updateIKHUD(targetSphere.position, 0.0, 0, true);
+}
+
+function onManualSliderMove() {
+  if (!robotArm) return;
+  const col = checkCollisions(robotArm, (event) => {
+    logCollisionEvent(event);
+  });
+  if (col.collided) {
+    updateSlidersFromRobot(robotArm);
+  }
+  syncTargetToWrist();
 }
 
 function runActiveIKSolver() {
   if (!robotArm) return;
   let result;
   if (activeSolver === 'DLS') {
-    result = solveDLS(robotArm, targetSphere.position, {
-      maxIterations: 25,
-      toleranceMeters: 0.001,
-      lambda: 0.04
-    });
+    result = solveDLS(robotArm, targetSphere.position, { maxIterations: 25, toleranceMeters: 0.001, lambda: 0.04 });
   } else {
-    result = solveCCD(robotArm, targetSphere.position, {
-      maxIterations: 20,
-      toleranceMeters: 0.005
-    });
+    result = solveCCD(robotArm, targetSphere.position, { maxIterations: 20, toleranceMeters: 0.005 });
+  }
+
+  // Check collision for the newly computed posture
+  const col = checkCollisions(robotArm, (event) => {
+    logCollisionEvent(event);
+  });
+
+  if (col.collided) {
+    syncTargetToWrist();
   }
 
   updateSlidersFromRobot(robotArm);
   updateIKHUD(targetSphere.position, result.finalDistanceMm, result.iterations, result.reached);
 }
 
-transformControls.addEventListener('change', () => {
-  runActiveIKSolver();
-});
+transformControls.addEventListener('change', () => runActiveIKSolver());
 
-// 8. Operator Controls (Keyboard & WebXR Controller)
+// 9. Operator Controls (Keyboard & WebXR Controller)
 const operator = setupOperatorControls({
   scene,
   renderer,
   targetSphere,
   onTargetMoved: () => runActiveIKSolver(),
-  onGripChanged: (closed) => {
-    console.log(`[Operator] Gripper ${closed ? 'CLOSED (100%)' : 'OPEN (0%)'}`);
-  }
+  onGripChanged: (closed) => console.log(`[Operator] Gripper ${closed ? 'CLOSED' : 'OPEN'}`)
 });
 
-// 9. WebXR Render Loop
+// 10. WebXR Render Loop
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
