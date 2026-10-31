@@ -99,20 +99,15 @@ body {
   font-family: ui-monospace, Menlo, monospace; font-size: 0.68rem;
   color: #9ca3af; line-height: 1.35;
 }
-.csv-download-btn {
-  width: 100%; margin-top: 4px; background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd;
-  padding: 3px 6px; font-size: 0.7rem; border-radius: 4px;
-  cursor: pointer; text-align: center; transition: all 0.15s;
-}
+.csv-download-btn { width: 100%; margin-top: 4px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; padding: 3px 6px; font-size: 0.7rem; border-radius: 4px; cursor: pointer; text-align: center; transition: all 0.15s; }
 .csv-download-btn:hover { background: rgba(59, 130, 246, 0.35); color: #fff; }
-.ik-download-btn {
-  border-color: rgba(249, 115, 22, 0.4); color: #fdba74;
-  background: rgba(249, 115, 22, 0.15); margin-top: 6px;
-}
-.ik-download-btn:hover {
-  background: rgba(249, 115, 22, 0.35); color: #fff;
-}
+.ik-download-btn { border-color: rgba(249, 115, 22, 0.4); color: #fdba74; background: rgba(249, 115, 22, 0.15); margin-top: 6px; }
+.ik-download-btn:hover { background: rgba(249, 115, 22, 0.35); color: #fff; }
+
+#scenario-switcher { position: absolute; top: 76px; left: 16px; display: flex; gap: 6px; z-index: 10; }
+.scen-btn { background: rgba(18, 18, 26, 0.85); color: #9ca3af; border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 8px; font-size: 0.7rem; font-weight: 600; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
+.scen-btn:hover { color: #fff; border-color: #f59e0b; }
+.scen-btn.active { background: #f59e0b; color: #111827; border-color: #d97706; }
 
 /* Gripper Controls in IK Panel */
 .gripper-control-row {

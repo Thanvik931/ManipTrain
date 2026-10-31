@@ -16,6 +16,7 @@ const LINK_NAMES = [
 ];
 
 let obstacles = [];
+let dynamicObstacles = [];
 let lastSafeAngles = {};
 let lastCollisionLogTime = 0;
 const localLinkBoxes = {};
@@ -79,6 +80,10 @@ export function createEnvironmentObstacles(scene) {
   return obstacles;
 }
 
+export function setScenarioObstacles(customList = []) {
+  dynamicObstacles = customList;
+}
+
 /**
  * Caches local bounding boxes and records initial safe joint angles.
  */
@@ -123,7 +128,7 @@ export function checkCollisions(robot, onCollision) {
 
     if (tempBox.isEmpty()) continue;
 
-    for (const obs of obstacles) {
+    for (const obs of obstacles.concat(dynamicObstacles)) {
       if (tempBox.intersectsBox(obs.box)) {
         if (obs.name === 'Work Table' && (linkName.startsWith('wrist_') || linkName === 'ee_link')) {
           if (tempBox.min.y >= 0.13) continue; // Allow wrist & gripper to operate in workspace above table
