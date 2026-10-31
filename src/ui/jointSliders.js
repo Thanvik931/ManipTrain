@@ -1,5 +1,5 @@
 // src/ui/jointSliders.js
-// Task 11: 6-DOF controls with CCD/DLS toggle, FK verification, and collision log feed.
+// Task 12: 6-DOF controls with CCD/DLS toggle, FK verification, and safety/gripper log feed.
 
 import { jointLimits, clampJointAngle, onLimitHit } from '../kinematics/jointLimiter.js';
 import { forwardKinematicsUR5, compareFKWithThree } from '../kinematics/fk.js';
@@ -51,17 +51,15 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
 
     <div class="log-section">
       <div class="log-header">
-        <span>Safety & Collision Log</span>
+        <span>Safety & Gripper Events</span>
         <span id="log-count">0 hits</span>
       </div>
-      <div id="limit-log-feed">Safe — no collisions</div>
+      <div id="limit-log-feed">System ready — no events</div>
     </div>
   `;
   document.body.appendChild(panel);
 
   const slidersList = panel.querySelector('#sliders-list');
-  const logFeed = panel.querySelector('#limit-log-feed');
-  const logCount = panel.querySelector('#log-count');
   const fkBadgeEl = panel.querySelector('#fk-badge');
   const solverNameEl = panel.querySelector('#active-solver-name');
   const btnCCD = panel.querySelector('#btn-solver-ccd');
@@ -130,16 +128,7 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
   btnCCD.onclick = () => setSolver('CCD');
   btnDLS.onclick = () => setSolver('DLS');
 
-  onLimitHit((entry) => {
-    totalHits += 1;
-    logCount.textContent = `${totalHits} hits`;
-    logFeed.innerHTML = `
-      <div class="log-entry">
-        <span class="log-time">[${entry.timestamp}]</span>
-        <span class="log-msg"><b>${entry.label}</b> limit (${entry.clampedDeg}°)</span>
-      </div>
-    `;
-  });
+  onLimitHit((entry) => logFeedEntry(entry.timestamp, `<b>${entry.label}</b> limit (${entry.clampedDeg}°)`));
 
   panel.querySelector('#reset-joints-btn').onclick = () => {
     Object.keys(currentSliders).forEach((name) => {
@@ -162,22 +151,30 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
   setTimeout(updateFKVerification, 50);
 }
 
-export function logCollisionEvent(event) {
+function logFeedEntry(time, htmlMsg) {
   totalHits += 1;
   const feed = document.getElementById('limit-log-feed');
   const count = document.getElementById('log-count');
   if (count) count.textContent = `${totalHits} hits`;
   if (feed) {
-    feed.innerHTML = `
-      <div class="log-entry">
-        <span class="log-time">[${event.timestamp}]</span>
-        <span class="log-msg"><b style="color:#ef4444">💥 ${event.linkName}</b> hit ${event.obstacleName} (${event.impactN} N)</span>
-      </div>
-    `;
+    feed.innerHTML = `<div class="log-entry"><span class="log-time">[${time}]</span><span class="log-msg">${htmlMsg}</span></div>`;
     feed.classList.remove('limit-hit');
     void feed.offsetWidth;
     feed.classList.add('limit-hit');
   }
+}
+
+export function logCollisionEvent(event) {
+  logFeedEntry(event.timestamp, `<b style="color:#ef4444">💥 ${event.linkName}</b> hit ${event.obstacleName} (${event.impactN} N)`);
+}
+
+export function logGripperEvent(event) {
+  const time = new Date().toTimeString().split(' ')[0];
+  let msg = '';
+  if (event.type === 'grab') msg = `<b style="color:#4ade80">🧲 Grabbed</b> ${event.name} (${event.gripPercent}%)`;
+  else if (event.type === 'slip') msg = `<b style="color:#f59e0b">📦 Slipped</b> ${event.name} (${event.gripPercent}%)`;
+  else if (event.type === 'crush') msg = `<b style="color:#ef4444">💥 CRUSHED!</b> ${event.name} (${event.gripPercent}%)`;
+  logFeedEntry(time, msg);
 }
 
 export function updateSlidersFromRobot(robot) {

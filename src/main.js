@@ -1,5 +1,5 @@
 // src/main.js
-// Task 11: Simplified link AABB collisions, obstacles, and impact logging.
+// Task 12: Gripper & grasping rules (hold, slip, crush, gravity), collisions, and teleoperation.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -11,7 +11,8 @@ import {
   setupJointSliders,
   updateSlidersFromRobot,
   updateIKHUD,
-  logCollisionEvent
+  logCollisionEvent,
+  logGripperEvent
 } from './ui/jointSliders.js';
 import { setupOperatorControls } from './ui/operatorControls.js';
 import { solveCCD } from './kinematics/ik_ccd.js';
@@ -21,6 +22,12 @@ import {
   initSafeAngles,
   checkCollisions
 } from './physics/collisionDetector.js';
+import {
+  attachGripper,
+  createGraspableObjects,
+  updateGrip,
+  updateGravity
+} from './physics/gripper.js';
 
 // 1. Scene & Camera
 const scene = new THREE.Scene();
@@ -38,7 +45,7 @@ renderer.xr.enabled = true;
 document.getElementById('app').appendChild(renderer.domElement);
 document.body.appendChild(VRButton.createButton(renderer));
 
-// 3. Stats.js Performance Monitor (bottom-left corner to avoid title overlap)
+// 3. Stats.js Monitor (anchored at bottom-left corner)
 const stats = new Stats();
 stats.dom.style.position = 'fixed';
 stats.dom.style.top = 'auto';
@@ -67,8 +74,9 @@ const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
 grid.position.y = 0.001;
 scene.add(grid);
 
-// 6. Obstacles (Work Table, Legs, Safety Shield, Floor)
+// 6. Environment Obstacles & Graspable Objects
 createEnvironmentObstacles(scene);
+createGraspableObjects(scene);
 
 // 7. Target Sphere & TransformControls
 const targetGeo = new THREE.SphereGeometry(0.022, 24, 24);
@@ -99,6 +107,7 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
 
   robot.updateMatrixWorld(true);
   eeLink = robot.links['ee_link'] || robot.links['wrist_3_link'];
+  attachGripper(eeLink);
   initSafeAngles(robot);
 
   syncTargetToWrist();
@@ -114,8 +123,8 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   );
 
   const overlaySub = document.querySelector('#overlay-info p');
-  if (overlaySub) overlaySub.textContent = 'Task 11: Simplified Collisions & Impact Logging';
-  console.log('%c🎯 ManipTrain: Obstacles & collision detection active.', 'color: #f97316; font-weight: bold;');
+  if (overlaySub) overlaySub.textContent = 'Task 12: Gripper & Grasping Rules (Hold, Slip, Crush, Gravity)';
+  console.log('%c🎯 ManipTrain: Gripper & grasping physics initialized.', 'color: #f97316; font-weight: bold;');
 });
 
 function syncTargetToWrist() {
@@ -135,12 +144,8 @@ function resetToHome() {
 
 function onManualSliderMove() {
   if (!robotArm) return;
-  const col = checkCollisions(robotArm, (event) => {
-    logCollisionEvent(event);
-  });
-  if (col.collided) {
-    updateSlidersFromRobot(robotArm);
-  }
+  const col = checkCollisions(robotArm, (event) => logCollisionEvent(event));
+  if (col.collided) updateSlidersFromRobot(robotArm);
   syncTargetToWrist();
 }
 
@@ -153,14 +158,8 @@ function runActiveIKSolver() {
     result = solveCCD(robotArm, targetSphere.position, { maxIterations: 20, toleranceMeters: 0.005 });
   }
 
-  // Check collision for the newly computed posture
-  const col = checkCollisions(robotArm, (event) => {
-    logCollisionEvent(event);
-  });
-
-  if (col.collided) {
-    syncTargetToWrist();
-  }
+  const col = checkCollisions(robotArm, (event) => logCollisionEvent(event));
+  if (col.collided) syncTargetToWrist();
 
   updateSlidersFromRobot(robotArm);
   updateIKHUD(targetSphere.position, result.finalDistanceMm, result.iterations, result.reached);
@@ -168,13 +167,13 @@ function runActiveIKSolver() {
 
 transformControls.addEventListener('change', () => runActiveIKSolver());
 
-// 9. Operator Controls (Keyboard & WebXR Controller)
+// 9. Operator Controls (Keyboard, Grip Force, & WebXR)
 const operator = setupOperatorControls({
   scene,
   renderer,
   targetSphere,
   onTargetMoved: () => runActiveIKSolver(),
-  onGripChanged: (closed) => console.log(`[Operator] Gripper ${closed ? 'CLOSED' : 'OPEN'}`)
+  onGripChanged: (force) => updateGrip(force, (evt) => logGripperEvent(evt))
 });
 
 // 10. WebXR Render Loop
@@ -186,7 +185,11 @@ window.addEventListener('resize', () => {
 
 renderer.setAnimationLoop(() => {
   stats.begin();
-  if (operator) operator.updateXR();
+  if (operator) {
+    operator.updateXR();
+    updateGrip(operator.getGripForce(), (evt) => logGripperEvent(evt));
+  }
+  updateGravity(0.016);
   orbitControls.update();
   renderer.render(scene, camera);
   stats.end();

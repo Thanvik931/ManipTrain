@@ -114,22 +114,30 @@ body {
   background: rgba(249, 115, 22, 0.35); color: #fff;
 }
 
-/* Gripper Toggle in IK Panel */
+/* Gripper Controls in IK Panel */
 .gripper-control-row {
+  margin-top: 6px; padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.gripper-label-row {
   display: flex; justify-content: space-between; align-items: center;
-  margin-top: 6px; padding-top: 4px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
-  font-size: 0.68rem; color: #9ca3af;
+  font-size: 0.7rem; color: #fdba74;
 }
-.gripper-btn {
-  background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e;
-  color: #4ade80; font-family: ui-monospace, Menlo, monospace;
-  font-size: 0.68rem; font-weight: 700; padding: 2px 8px;
-  border-radius: 4px; cursor: pointer; transition: all 0.15s;
+#grip-force-slider {
+  width: 100%; height: 4px; accent-color: #f59e0b; cursor: pointer;
 }
-.gripper-btn.closed {
-  background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #f87171;
+.gripper-actions {
+  display: flex; gap: 4px; margin-top: 2px;
 }
+.grip-btn {
+  flex: 1; padding: 2px 4px; font-size: 0.65rem; font-weight: 600;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #9ca3af; border-radius: 4px; cursor: pointer; transition: all 0.15s;
+}
+.grip-btn.hold { color: #4ade80; border-color: #22c55e; background: rgba(34, 197, 94, 0.12); }
+.grip-btn.danger { color: #f87171; border-color: #ef4444; background: rgba(239, 68, 68, 0.12); }
+.grip-btn:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
 
 /* Violation Log */
 .log-section {
