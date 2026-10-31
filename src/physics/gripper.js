@@ -17,14 +17,12 @@ const tempObjPos = new THREE.Vector3();
 export function attachGripper(eeLink) {
   gripperGroup = new THREE.Group();
 
-  // Gripper mount collar
   const collarGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.02, 16);
   const collarMat = new THREE.MeshStandardMaterial({ color: 0x374151, roughness: 0.4 });
   const collar = new THREE.Mesh(collarGeo, collarMat);
   collar.rotation.x = Math.PI / 2;
   gripperGroup.add(collar);
 
-  // Left and right parallel jaws
   const fingerGeo = new THREE.BoxGeometry(0.008, 0.045, 0.015);
   const fingerMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.3 });
 
@@ -46,7 +44,6 @@ export function attachGripper(eeLink) {
 export function createGraspableObjects(scene) {
   graspables = [];
 
-  // 1. Solid Blue Cube
   const cubeGeo = new THREE.BoxGeometry(0.04, 0.04, 0.04);
   const cubeMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 });
   const cube = new THREE.Mesh(cubeGeo, cubeMat);
@@ -63,7 +60,6 @@ export function createGraspableObjects(scene) {
     maxGrip: 100
   });
 
-  // 2. Fragile Amber Glass Object (detonation/crush sensitive)
   const flaskGeo = new THREE.SphereGeometry(0.022, 20, 20);
   const flaskMat = new THREE.MeshStandardMaterial({
     color: 0xf59e0b,
@@ -90,10 +86,10 @@ export function createGraspableObjects(scene) {
 }
 
 /**
- * Updates visual fingers and applies simplified grasping rules (hold, slip, crush).
+ * Evaluates grasp state transitions (grab, hold, slip, crush).
+ * Called only when grip force changes.
  */
 export function updateGrip(gripPercent, onEvent) {
-  // Animate jaw gap: 0% -> 50mm gap, 100% -> 8mm gap
   const halfGap = 0.025 - (gripPercent / 100) * 0.021;
   if (leftFinger && rightFinger) {
     leftFinger.position.x = -halfGap;
@@ -103,33 +99,28 @@ export function updateGrip(gripPercent, onEvent) {
   if (!gripperGroup) return;
   gripperGroup.getWorldPosition(tempWorldPos);
 
-  // 1. If currently holding an object: evaluate hold, slip, or crush
   if (heldObject) {
     if (gripPercent < heldObject.minGrip) {
-      // Slip condition
       heldObject.isHeld = false;
       const released = heldObject;
       heldObject = null;
       if (onEvent) onEvent({ type: 'slip', name: released.name, gripPercent });
     } else if (heldObject.isFragile && gripPercent > heldObject.maxGrip && !heldObject.isCrushed) {
-      // Crush condition
       heldObject.isCrushed = true;
       heldObject.mesh.material.color.setHex(0xef4444);
-      heldObject.mesh.scale.set(1.4, 0.3, 1.4); // squashed
+      heldObject.mesh.scale.set(1.4, 0.3, 1.4);
       if (onEvent) onEvent({ type: 'crush', name: heldObject.name, gripPercent });
     } else {
-      // Held: follow gripper tip position
       heldObject.mesh.position.copy(tempWorldPos);
     }
     return;
   }
 
-  // 2. Not holding: check if fingers close around a nearby object
   if (gripPercent >= 25) {
     for (const obj of graspables) {
       if (obj.isCrushed) continue;
       obj.mesh.getWorldPosition(tempObjPos);
-      if (tempWorldPos.distanceTo(tempObjPos) < 0.055) {
+      if (tempWorldPos.distanceTo(tempObjPos) < 0.06) {
         obj.isHeld = true;
         heldObject = obj;
         if (onEvent) onEvent({ type: 'grab', name: obj.name, gripPercent });
@@ -140,7 +131,17 @@ export function updateGrip(gripPercent, onEvent) {
 }
 
 /**
- * Applies simplified downward gravity to any released/slipped objects.
+ * Keeps held object attached to the gripper during animation loop.
+ */
+export function syncHeldObject() {
+  if (heldObject && gripperGroup) {
+    gripperGroup.getWorldPosition(tempWorldPos);
+    heldObject.mesh.position.copy(tempWorldPos);
+  }
+}
+
+/**
+ * Steps simple downward gravity for unheld items.
  */
 export function updateGravity(dt = 0.016) {
   const tableTopY = 0.185;
@@ -149,7 +150,6 @@ export function updateGravity(dt = 0.016) {
   for (const obj of graspables) {
     if (obj.isHeld) continue;
 
-    // Check if directly above table surface (X: [-0.35, 0.35], Z: [0.32, 0.72])
     const onTable = Math.abs(obj.mesh.position.x) <= 0.35 &&
                     obj.mesh.position.z >= 0.30 &&
                     obj.mesh.position.z <= 0.74;

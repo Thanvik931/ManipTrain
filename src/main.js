@@ -1,5 +1,5 @@
 // src/main.js
-// Task 12: Gripper & grasping rules (hold, slip, crush, gravity), collisions, and teleoperation.
+// Task 12: High-performance gripper, grasping rules, optimized collision detection, and WebXR.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -26,6 +26,7 @@ import {
   attachGripper,
   createGraspableObjects,
   updateGrip,
+  syncHeldObject,
   updateGravity
 } from './physics/gripper.js';
 
@@ -124,7 +125,7 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
 
   const overlaySub = document.querySelector('#overlay-info p');
   if (overlaySub) overlaySub.textContent = 'Task 12: Gripper & Grasping Rules (Hold, Slip, Crush, Gravity)';
-  console.log('%c🎯 ManipTrain: Gripper & grasping physics initialized.', 'color: #f97316; font-weight: bold;');
+  console.log('%c🎯 ManipTrain: Fast kinematics and grasping active.', 'color: #f97316; font-weight: bold;');
 });
 
 function syncTargetToWrist() {
@@ -153,9 +154,9 @@ function runActiveIKSolver() {
   if (!robotArm) return;
   let result;
   if (activeSolver === 'DLS') {
-    result = solveDLS(robotArm, targetSphere.position, { maxIterations: 25, toleranceMeters: 0.001, lambda: 0.04 });
+    result = solveDLS(robotArm, targetSphere.position, { maxIterations: 12, toleranceMeters: 0.002, lambda: 0.04 });
   } else {
-    result = solveCCD(robotArm, targetSphere.position, { maxIterations: 20, toleranceMeters: 0.005 });
+    result = solveCCD(robotArm, targetSphere.position, { maxIterations: 12, toleranceMeters: 0.005 });
   }
 
   const col = checkCollisions(robotArm, (event) => logCollisionEvent(event));
@@ -185,10 +186,8 @@ window.addEventListener('resize', () => {
 
 renderer.setAnimationLoop(() => {
   stats.begin();
-  if (operator) {
-    operator.updateXR();
-    updateGrip(operator.getGripForce(), (evt) => logGripperEvent(evt));
-  }
+  if (operator) operator.updateXR();
+  syncHeldObject();
   updateGravity(0.016);
   orbitControls.update();
   renderer.render(scene, camera);
