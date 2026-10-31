@@ -70,6 +70,20 @@ body {
   border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 6px;
 }
 .ik-section { border-color: rgba(249, 115, 22, 0.3); }
+.solver-toggle-group {
+  display: flex; gap: 6px; margin: 4px 0 6px 0;
+}
+.solver-btn {
+  flex: 1; padding: 3px 6px; font-size: 0.68rem; font-weight: 600;
+  background: rgba(255, 255, 255, 0.06); color: #9ca3af;
+  border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px;
+  cursor: pointer; transition: all 0.15s;
+}
+.solver-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.solver-btn.active {
+  background: #f97316; color: #fff; border-color: #ea580c;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.4);
+}
 .panel-sub-header {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 0.74rem; color: #fdba74; margin-bottom: 4px; font-weight: 600;

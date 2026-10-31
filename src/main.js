@@ -1,5 +1,5 @@
 // src/main.js
-// Task 7: CCD IK with synchronized target tracking and home-pose reset.
+// Task 8: Damped Least Squares (DLS) & CCD Inverse Kinematics with live toggle.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -7,15 +7,16 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import URDFLoader from 'urdf-loader';
 import { setupJointSliders, updateSlidersFromRobot, updateIKHUD } from './ui/jointSliders.js';
 import { solveCCD } from './kinematics/ik_ccd.js';
+import { solveDLS } from './kinematics/ik_dls.js';
 
-// 1. Scene & Camera
+// 1. Three.js Scene & Camera setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1e1e28);
 
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.05, 100);
 camera.position.set(1.5, 1.2, 1.8);
 
-// 2. Renderer
+// 2. WebGL Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -28,7 +29,7 @@ orbitControls.enableDamping = true;
 orbitControls.dampingFactor = 0.05;
 orbitControls.target.set(0, 0.4, 0);
 
-// 4. Lights & Ground
+// 4. Lights & Environment Ground
 scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
 keyLight.position.set(3, 5, 3);
@@ -42,7 +43,7 @@ const grid = new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a);
 grid.position.y = 0.001;
 scene.add(grid);
 
-// 5. Target Sphere & TransformControls
+// 5. Target Handle & TransformControls
 const targetGeo = new THREE.SphereGeometry(0.022, 24, 24);
 const targetMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0x7c2d12, roughness: 0.3 });
 const targetSphere = new THREE.Mesh(targetGeo, targetMat);
@@ -60,6 +61,7 @@ transformControls.addEventListener('dragging-changed', (event) => {
 // 6. Robot Loading & Bidirectional Sync
 let robotArm = null;
 let eeLink = null;
+let activeSolver = 'CCD';
 const loader = new URDFLoader();
 
 loader.load('/models/ur5/ur5.urdf', (robot) => {
@@ -71,19 +73,22 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   robot.updateMatrixWorld(true);
   eeLink = robot.links['ee_link'] || robot.links['wrist_3_link'];
 
-  // Initialize target sphere exactly at the gripper wrist tip
   syncTargetToWrist();
 
   setupJointSliders(
     robot,
     null,
-    () => syncTargetToWrist(), // When sliders move, keep orange target attached to wrist
-    () => resetToHome()        // When reset clicked, snap both arm and target to 0
+    () => syncTargetToWrist(),
+    () => resetToHome(),
+    (mode) => {
+      activeSolver = mode;
+      runActiveIKSolver();
+    }
   );
 
   const overlaySub = document.querySelector('#overlay-info p');
-  if (overlaySub) overlaySub.textContent = 'Task 7: Inverse Kinematics (CCD Solver)';
-  console.log('%c🎯 ManipTrain: Target synchronized with wrist.', 'color: #f97316; font-weight: bold;');
+  if (overlaySub) overlaySub.textContent = 'Task 8: Damped Least Squares IK (DLS vs CCD)';
+  console.log('%c🎯 ManipTrain: DLS & CCD solvers initialized.', 'color: #f97316; font-weight: bold;');
 });
 
 function syncTargetToWrist() {
@@ -100,11 +105,28 @@ function resetToHome() {
   updateIKHUD(targetSphere.position, 0.0, 0, true);
 }
 
-transformControls.addEventListener('change', () => {
+function runActiveIKSolver() {
   if (!robotArm) return;
-  const result = solveCCD(robotArm, targetSphere.position, { maxIterations: 20, toleranceMeters: 0.005 });
+  let result;
+  if (activeSolver === 'DLS') {
+    result = solveDLS(robotArm, targetSphere.position, {
+      maxIterations: 25,
+      toleranceMeters: 0.001,
+      lambda: 0.04
+    });
+  } else {
+    result = solveCCD(robotArm, targetSphere.position, {
+      maxIterations: 20,
+      toleranceMeters: 0.005
+    });
+  }
+
   updateSlidersFromRobot(robotArm);
   updateIKHUD(targetSphere.position, result.finalDistanceMm, result.iterations, result.reached);
+}
+
+transformControls.addEventListener('change', () => {
+  runActiveIKSolver();
 });
 
 // 7. Render Loop

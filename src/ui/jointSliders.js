@@ -1,16 +1,18 @@
 // src/ui/jointSliders.js
-// Task 7: Sliders with bidirectional target tracking and clean home-reset sync.
+// Task 8: 6-DOF controls with CCD/DLS solver toggle, FK badge, and limits log.
 
 import { jointLimits, clampJointAngle, onLimitHit } from '../kinematics/jointLimiter.js';
 import { forwardKinematicsUR5, compareFKWithThree } from '../kinematics/fk.js';
+import { exportFKPosesCSV } from './csvExporter.js';
 
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;
 
 let currentSliders = {};
 let movableJointsList = [];
+let currentSolver = 'CCD';
 
-export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset) {
+export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, onSolverChange) {
   const existing = document.getElementById('joint-controls');
   if (existing) existing.remove();
 
@@ -25,12 +27,16 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset) 
 
     <div class="ik-section">
       <div class="panel-sub-header">
-        <span>IK Solver (CCD Target Chasing)</span>
+        <span>IK Solver (<span id="active-solver-name">CCD</span>)</span>
         <span id="ik-badge" class="fk-badge fk-pass">0.0 mm</span>
+      </div>
+      <div class="solver-toggle-group">
+        <button id="btn-solver-ccd" class="solver-btn active">CCD</button>
+        <button id="btn-solver-dls" class="solver-btn">DLS (Jacobian)</button>
       </div>
       <div class="stat-coords">
         <div><b>Target:</b> <span id="ik-target-pos">X:0.00 Y:0.00 Z:0.00</span></div>
-        <div><b>Iterations:</b> <span id="ik-iters">0 / 20</span></div>
+        <div><b>Iterations:</b> <span id="ik-iters">0 / 25</span></div>
       </div>
     </div>
 
@@ -56,6 +62,9 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset) 
   const logFeed = panel.querySelector('#limit-log-feed');
   const logCount = panel.querySelector('#log-count');
   const fkBadgeEl = panel.querySelector('#fk-badge');
+  const solverNameEl = panel.querySelector('#active-solver-name');
+  const btnCCD = panel.querySelector('#btn-solver-ccd');
+  const btnDLS = panel.querySelector('#btn-solver-dls');
 
   movableJointsList = Object.values(robot.joints).filter(
     (j) => j.jointType === 'revolute' || j.jointType === 'continuous'
@@ -110,14 +119,29 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset) 
         row.classList.remove('limit-hit');
       }
       updateFKVerification();
-
-      // Keep target point attached to wrist when sliders move manually
       if (onTargetSync) onTargetSync();
     });
 
     currentSliders[joint.name] = { input, display, row };
     slidersList.appendChild(row);
   });
+
+  // Solver mode selection
+  function setSolver(mode) {
+    currentSolver = mode;
+    solverNameEl.textContent = mode;
+    if (mode === 'CCD') {
+      btnCCD.classList.add('active');
+      btnDLS.classList.remove('active');
+    } else {
+      btnDLS.classList.add('active');
+      btnCCD.classList.remove('active');
+    }
+    if (onSolverChange) onSolverChange(mode);
+  }
+
+  btnCCD.addEventListener('click', () => setSolver('CCD'));
+  btnDLS.addEventListener('click', () => setSolver('DLS'));
 
   onLimitHit((entry) => {
     totalHits += 1;
@@ -130,7 +154,6 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset) 
     `;
   });
 
-  // Reset button: resets joints to 0.0° and triggers home position sync
   panel.querySelector('#reset-joints-btn').addEventListener('click', () => {
     Object.keys(currentSliders).forEach((name) => {
       const { input, display, row } = currentSliders[name];
@@ -167,40 +190,12 @@ export function updateIKHUD(targetPos, distanceMm, iters, reached) {
   const itersEl = document.getElementById('ik-iters');
   const badgeEl = document.getElementById('ik-badge');
 
-  if (targetPosEl) targetPosEl.textContent = `X:${targetPos.x.toFixed(2)} Y:${targetPos.y.toFixed(2)} Z:${targetPos.z.toFixed(2)}`;
-  if (itersEl) itersEl.textContent = `${iters} / 20 iters`;
+  if (targetPosEl) {
+    targetPosEl.textContent = `X:${targetPos.x.toFixed(2)} Y:${targetPos.y.toFixed(2)} Z:${targetPos.z.toFixed(2)}`;
+  }
+  if (itersEl) itersEl.textContent = `${iters} iters`;
   if (badgeEl) {
     badgeEl.textContent = `${distanceMm.toFixed(1)} mm`;
     badgeEl.className = reached ? 'fk-badge fk-pass' : 'fk-badge fk-warn';
   }
-}
-
-function exportFKPosesCSV() {
-  const rows = ['pose_id,q1_deg,q2_deg,q3_deg,q4_deg,q5_deg,q6_deg,js_x,js_y,js_z'];
-  for (let i = 0; i < 20; i++) {
-    const q = [
-      (Math.random() * 360 - 180).toFixed(1),
-      (Math.random() * 180 - 120).toFixed(1),
-      (Math.random() * 300 - 150).toFixed(1),
-      (Math.random() * 360 - 180).toFixed(1),
-      (Math.random() * 360 - 180).toFixed(1),
-      (Math.random() * 360 - 180).toFixed(1)
-    ].map(Number);
-
-    const rads = {
-      shoulder_pan_joint: q[0] * DEG2RAD,
-      shoulder_lift_joint: q[1] * DEG2RAD,
-      elbow_joint: q[2] * DEG2RAD,
-      wrist_1_joint: q[3] * DEG2RAD,
-      wrist_2_joint: q[4] * DEG2RAD,
-      wrist_3_joint: q[5] * DEG2RAD
-    };
-    const tip = forwardKinematicsUR5(rads);
-    rows.push(`${i + 1},${q[0]},${q[1]},${q[2]},${q[3]},${q[4]},${q[5]},${tip.x.toFixed(6)},${tip.y.toFixed(6)},${tip.z.toFixed(6)}`);
-  }
-  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'fk_poses.csv';
-  a.click();
 }
