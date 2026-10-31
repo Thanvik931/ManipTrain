@@ -1,13 +1,13 @@
 // src/physics/collisionDetector.js
 // Task 11: Simplified link AABB collision detection, table/obstacles, and impact logging.
-// SIMPLIFICATION NOTE: Full physics engines use iterative GJK/EPA convex mesh clipping.
-// For real-time 60 FPS WebXR simulation without heavy dependencies, we use hierarchical
-// Axis-Aligned Bounding Boxes (AABB) tested against environmental obstacle boxes.
+// SIMPLIFICATION NOTE: Real-time robotics uses convex hulls or GJK/EPA narrow-phase algorithms.
+// For our browser WebXR simulator, we use hierarchical AABB (Axis-Aligned Bounding Box) testing
+// updated per frame, providing O(N) collision detection at 60 FPS without heavy physics engines.
 
 import * as THREE from 'three';
 
+// Moving arm links to test (shoulder is part of the floor-mounted rotating base)
 const LINK_NAMES = [
-  'shoulder_link',
   'upper_arm_link',
   'forearm_link',
   'wrist_1_link',
@@ -26,22 +26,22 @@ const tempBox = new THREE.Box3();
 export function createEnvironmentObstacles(scene) {
   obstacles = [];
 
-  // 1. Work Table (where scenarios S1/S2/S3 will take place)
+  // 1. Work Table in front of the robot (where scenarios S1/S2/S3 will take place)
   const tableGroup = new THREE.Group();
-  const tableTopGeo = new THREE.BoxGeometry(0.8, 0.04, 0.65);
-  const tableMat = new THREE.MeshStandardMaterial({ color: 0x2e3440, roughness: 0.5, metalness: 0.1 });
+  const tableTopGeo = new THREE.BoxGeometry(0.70, 0.03, 0.45);
+  const tableMat = new THREE.MeshStandardMaterial({ color: 0x2e3440, roughness: 0.6, metalness: 0.1 });
   const tableTop = new THREE.Mesh(tableTopGeo, tableMat);
-  tableTop.position.set(0.32, 0.22, 0.18);
+  tableTop.position.set(0.0, 0.16, 0.45); // in front of robot base at +Z
   tableGroup.add(tableTop);
 
-  // Table leg supports
-  const legGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.22);
+  // Table leg supports down to floor
+  const legGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.145);
   const legMat = new THREE.MeshStandardMaterial({ color: 0x1f232a });
   const legOffsets = [
-    [0.68, 0.11, 0.46],
-    [-0.04, 0.11, 0.46],
-    [0.68, 0.11, -0.10],
-    [-0.04, 0.11, -0.10]
+    [ 0.31, 0.0725,  0.64],
+    [-0.31, 0.0725,  0.64],
+    [ 0.31, 0.0725,  0.26],
+    [-0.31, 0.0725,  0.26]
   ];
   legOffsets.forEach(([x, y, z]) => {
     const leg = new THREE.Mesh(legGeo, legMat);
@@ -53,8 +53,8 @@ export function createEnvironmentObstacles(scene) {
   const tableBox = new THREE.Box3().setFromObject(tableTop);
   obstacles.push({ name: 'Work Table', box: tableBox, mesh: tableTop });
 
-  // 2. Safety Wall Barrier (rear safety shield)
-  const wallGeo = new THREE.BoxGeometry(0.04, 0.6, 0.7);
+  // 2. Safety Wall Barrier (acrylic shield on the left side)
+  const wallGeo = new THREE.BoxGeometry(0.02, 0.50, 0.55);
   const wallMat = new THREE.MeshStandardMaterial({
     color: 0x38bdf8,
     transparent: true,
@@ -62,16 +62,16 @@ export function createEnvironmentObstacles(scene) {
     roughness: 0.2
   });
   const wall = new THREE.Mesh(wallGeo, wallMat);
-  wall.position.set(-0.35, 0.3, 0.15);
+  wall.position.set(-0.45, 0.25, 0.40);
   scene.add(wall);
 
   const wallBox = new THREE.Box3().setFromObject(wall);
   obstacles.push({ name: 'Safety Shield', box: wallBox, mesh: wall });
 
-  // 3. Ground Floor boundary (cannot drive links through floor)
+  // 3. Ground Floor boundary (detects penetration below ground level)
   const floorBox = new THREE.Box3(
     new THREE.Vector3(-5, -2, -5),
-    new THREE.Vector3(5, 0.005, 5)
+    new THREE.Vector3(5, -0.01, 5)
   );
   obstacles.push({ name: 'Floor Plane', box: floorBox, mesh: null });
 
@@ -106,7 +106,7 @@ export function checkCollisions(robot, onCollision) {
 
     for (const obs of obstacles) {
       if (tempBox.intersectsBox(obs.box)) {
-        // Calculate impact strength based on angular difference (speed proxy)
+        // Calculate impact strength based on angular displacement
         let totalDeltaRad = 0;
         Object.keys(lastSafeAngles).forEach((jName) => {
           const current = robot.joints[jName] ? (robot.joints[jName].angle || 0) : 0;
@@ -114,12 +114,12 @@ export function checkCollisions(robot, onCollision) {
           totalDeltaRad += Math.abs(current - safe);
         });
 
-        // Impact force formula (faster/larger bump = higher N)
+        // Speed-proportional impact force in Newtons
         const impactN = Number((Math.min(95, Math.max(12, totalDeltaRad * 160 + Math.random() * 5))).toFixed(1));
         const now = new Date();
         const timestamp = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
 
-        // Revert all joints immediately to last safe configuration
+        // Rollback all joints to last confirmed safe configuration
         Object.keys(lastSafeAngles).forEach((jName) => {
           robot.setJointValue(jName, lastSafeAngles[jName]);
         });
@@ -132,7 +132,7 @@ export function checkCollisions(robot, onCollision) {
     }
   }
 
-  // No collision: commit current configuration as safe
+  // No collision: store safe configuration
   Object.keys(robot.joints).forEach((name) => {
     if (robot.joints[name].angle !== undefined) {
       lastSafeAngles[name] = robot.joints[name].angle;
@@ -141,4 +141,3 @@ export function checkCollisions(robot, onCollision) {
 
   return { collided: false };
 }
-

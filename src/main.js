@@ -40,8 +40,9 @@ document.body.appendChild(VRButton.createButton(renderer));
 
 // 3. Stats.js Monitor
 const stats = new Stats();
-stats.dom.style.top = '65px';
-stats.dom.style.left = '12px';
+stats.dom.style.top = '78px';
+stats.dom.style.left = '16px';
+stats.dom.style.zIndex = '100';
 document.body.appendChild(stats.dom);
 
 // 4. OrbitControls
