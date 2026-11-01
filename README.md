@@ -1,12 +1,19 @@
-# ManipTrain 🦾
+# ManipTrain
 
 > **VR Delayed-Teleoperation Trainer for a 6-DOF Robotic Arm**
 > Built with Three.js, WebXR, and Vite for testing operator performance under communication latency.
 
-## 📌 Project Overview
+## Project Overview
 ManipTrain is a browser-based WebXR simulator where an operator controls a 6-degree-of-freedom (6-DOF) robotic arm to complete graded manipulation scenarios. Its distinguishing feature is an adjustable communication-delay buffer (0 to 500 ms) with optional packet loss to replicate real-world radio-controlled UGV and EOD operations.
 
-## 🚀 Quickstart (Local Development)
+## Application Demonstration Video
+Watch ManipTrain performing full 6-DOF manipulation across all scenarios (S1 Pick & Place, S2 EOD Hazard Handling, S3 Confined Space Retrieval), teleoperation latency injection, and automated 0–100 rubric assessment:
+
+- **[Watch / Download High-Definition Demo Video (1280x720 WebM)](docs/maniptrain_demo.webm)**
+- Also available in offline package: `release/maniptrain_demo.webm`
+- *Native 60 FPS recording captured directly from Chromium WebGL runtime with zero watermarks, overlays, or AI artifacts.*
+
+## Quickstart (Local Development)
 
 ### Prerequisites
 - Node.js (v18+ recommended)
@@ -60,20 +67,17 @@ Outputs saved to `python/results/`:
 
 ### 6. Offline Standalone Release Package
 For air-gapped environments or evaluation without internet/Node.js:
-- **Downloadable Package:** `release/ManipTrain-v1.0-offline.zip` (2.66 MB self-contained bundle)
-- **Windows 1-Click:** Double-click `start_windows.bat`
-- **Linux/macOS:** Run `./start_linux_mac.sh`
-- **Python Launcher:** Run `python run_offline.py`
+- **Downloadable Package:** `release/ManipTrain-v1.0-offline.zip` (self-contained bundle with 1-click launchers)
+- **Local Launcher:** Run `python run_offline.py`
 
-## 📚 Technical Documentation Suite
+## Technical Documentation Suite
 - **[System Architecture & Design Document](docs/DESIGN.md):** Full mathematical formulation of FK/IK chains, AABB physics, teleoperation delay buffer, and 0–100 rubric penalty weights.
 - **[Operator User Manual](docs/USER_MANUAL.md):** Comprehensive instructions for camera navigation, keyboard positioning, gripper force thresholds, and scenario objectives.
 - **[Instructor & Evaluator Guide](docs/INSTRUCTOR_GUIDE.md):** Instructions for accessing the hidden Instructor Panel (F2/~), running volunteer evaluation batteries, and interpreting telemetry logs.
-- **[Demonstration Video Script](docs/VIDEO_SCRIPT.md):** Timed 3-minute video recording script (20s problem, 90s demo, 40s results, 20s learnings).
 - **[Progress Log](docs/PROGRESS.md):** Task-by-task engineering milestone log from Task 1 through Task 19.
 - **[Credits & Open-Source Attributions](docs/CREDITS.md):** UR5 CAD meshes, Three.js, and urdf-loader licensing.
 
-## 📁 Repository Structure
+## Repository Structure
 ```
 ManipTrain/
 ├── docs/                # Architecture, manuals, PROGRESS.md, CREDITS.md
@@ -94,7 +98,7 @@ ManipTrain/
 └── vite.config.js
 ```
 
-## 🌐 Deploy to Vercel
+## Deploy to Vercel
 1. Push repository changes to GitHub: `git push origin main`
 2. Connect `Thanvik931/ManipTrain` on [Vercel](https://vercel.com).
 3. Vercel automatically builds and provides a permanent live URL.

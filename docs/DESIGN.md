@@ -77,3 +77,4 @@ $$\text{Score} = \max\left(0, 100 - (P_{\text{time}} + P_{\text{collision}} + P_
 - **$P_{\text{grip}}$:** 15 pts per dropped object, 30 pts per crushed object.
 - **$P_{\text{fail}}$:** 50 pts deduction upon scenario failure (e.g. hazard tilt $> 15^\circ$ or wall budget exhaustion).
 Grade thresholds: **A** ($\ge 90$), **B** ($78–89$), **C** ($60–77$), **D** ($45–59$), **F** ($< 45$).
+

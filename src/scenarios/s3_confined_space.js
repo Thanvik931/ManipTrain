@@ -163,7 +163,7 @@ export function recordS3Bump() {
   if (wallContacts > MAX_CONTACTS && !isFailed) {
     isFailed = true;
     isRunning = false;
-    uiElements.status.textContent = '💥 CONTACT LIMIT EXCEEDED';
+    uiElements.status.textContent = 'CONTACT LIMIT EXCEEDED';
     uiElements.status.className = 'scenario-badge danger';
     uiElements.btn.textContent = 'Restart S3';
     const report = finishRunAssessment({ success: false, reason: 'contact_limit', contacts: wallContacts });

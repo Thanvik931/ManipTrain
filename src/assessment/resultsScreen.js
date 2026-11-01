@@ -17,7 +17,7 @@ export function showResultsModal(report, onPlayAgain) {
   modalEl.innerHTML = `
     <div class="results-card">
       <div class="results-header">
-        <h2>${isSuccess ? '🏆 MISSION COMPLETE' : '⚠️ MISSION FAILED'}</h2>
+        <h2>${isSuccess ? 'MISSION COMPLETE' : 'MISSION FAILED'}</h2>
         <span class="results-scenario-tag">${report.scenario} | ${report.delayConfig.mode} (${report.delayConfig.meanLatencyMs}ms)</span>
       </div>
 
@@ -31,29 +31,29 @@ export function showResultsModal(report, onPlayAgain) {
 
       <div class="results-breakdown-grid">
         <div class="metric-box">
-          <span class="metric-label">⏱️ Duration</span>
+          <span class="metric-label">Duration</span>
           <b class="metric-val">${report.completionTimeSec} s</b>
           <small class="penalty-text">-${report.score.penalties.time} pts</small>
         </div>
         <div class="metric-box">
-          <span class="metric-label">💥 Collisions</span>
+          <span class="metric-label">Collisions</span>
           <b class="metric-val">${report.metrics.collisionCount} (${report.metrics.maxImpactN}N)</b>
           <small class="penalty-text">-${report.score.penalties.collision} pts</small>
         </div>
         <div class="metric-box">
-          <span class="metric-label">📈 Motion Jerk</span>
+          <span class="metric-label">Motion Jerk</span>
           <b class="metric-val">${report.metrics.meanJerkIndex}</b>
           <small class="penalty-text">-${report.score.penalties.jerk} pts</small>
         </div>
         <div class="metric-box">
-          <span class="metric-label">🧲 Grip Errors</span>
+          <span class="metric-label">Grip Errors</span>
           <b class="metric-val">${report.metrics.gripEvents.slip + report.metrics.gripEvents.crush}</b>
           <small class="penalty-text">-${report.score.penalties.grip} pts</small>
         </div>
       </div>
 
       <div class="results-actions">
-        <button id="btn-download-json" class="scenario-btn" style="background:#3b82f6; color:#fff">⬇ Download Assessment (JSON)</button>
+        <button id="btn-download-json" class="scenario-btn" style="background:#3b82f6; color:#fff">Download Assessment (JSON)</button>
         <button id="btn-results-retry" class="scenario-btn" style="background:#f59e0b; color:#111827">Play Again</button>
       </div>
     </div>

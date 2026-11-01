@@ -130,7 +130,7 @@ export function checkCollisions(robot, onCollision) {
 
     for (const obs of obstacles.concat(dynamicObstacles)) {
       if (tempBox.intersectsBox(obs.box)) {
-        if (obs.name === 'Work Table' && (linkName.startsWith('wrist_') || linkName === 'ee_link')) {
+        if (obs.name === 'Work Table' && (linkName.startsWith('wrist_') || linkName === 'ee_link' || linkName === 'forearm_link')) {
           if (tempBox.min.y >= 0.13) continue; // Allow wrist & gripper to operate in workspace above table
         }
         let totalDeltaRad = 0;

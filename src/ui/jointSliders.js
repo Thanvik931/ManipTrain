@@ -38,7 +38,7 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
         <div><b>Target:</b> <span id="ik-target-pos">X:0.00 Y:0.00 Z:0.00</span></div>
         <div><b>Iterations:</b> <span id="ik-iters">0 / 25</span></div>
       </div>
-      <button id="download-ik-csv-btn" class="csv-download-btn ik-download-btn">⬇ Download 50 IK Poses (CSV)</button>
+      <button id="download-ik-csv-btn" class="csv-download-btn ik-download-btn">Download 50 IK Poses (CSV)</button>
     </div>
 
     <div class="fk-section">
@@ -46,7 +46,7 @@ export function setupJointSliders(robot, onFKCalculated, onTargetSync, onReset, 
         <span>FK vs Three.js Verification</span>
         <span id="fk-badge" class="fk-badge fk-pass">0.0 mm</span>
       </div>
-      <button id="download-fk-csv-btn" class="csv-download-btn">⬇ Download 20 FK Poses (CSV)</button>
+      <button id="download-fk-csv-btn" class="csv-download-btn">Download 20 FK Poses (CSV)</button>
     </div>
 
     <div class="log-section">
@@ -161,15 +161,15 @@ function logFeedEntry(time, htmlMsg) {
 }
 
 export function logCollisionEvent(event) {
-  logFeedEntry(event.timestamp, `<b style="color:#ef4444">💥 ${event.linkName}</b> hit ${event.obstacleName} (${event.impactN} N)`);
+  logFeedEntry(event.timestamp, `<b style="color:#ef4444">[COLLISION] ${event.linkName}</b> hit ${event.obstacleName} (${event.impactN} N)`);
 }
 
 export function logGripperEvent(event) {
   const time = new Date().toTimeString().split(' ')[0];
   let msg = '';
-  if (event.type === 'grab') msg = `<b style="color:#4ade80">🧲 Grabbed</b> ${event.name} (${event.gripPercent}%)`;
-  else if (event.type === 'slip') msg = `<b style="color:#f59e0b">📦 Slipped</b> ${event.name} (${event.gripPercent}%)`;
-  else if (event.type === 'crush') msg = `<b style="color:#ef4444">💥 CRUSHED!</b> ${event.name} (${event.gripPercent}%)`;
+  if (event.type === 'grab') msg = `<b style="color:#4ade80">[GRAB]</b> ${event.name} (${event.gripPercent}%)`;
+  else if (event.type === 'slip') msg = `<b style="color:#f59e0b">[SLIP]</b> ${event.name} (${event.gripPercent}%)`;
+  else if (event.type === 'crush') msg = `<b style="color:#ef4444">[CRUSH]</b> ${event.name} (${event.gripPercent}%)`;
   logFeedEntry(time, msg);
 }
 

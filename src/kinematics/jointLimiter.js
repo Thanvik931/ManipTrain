@@ -77,7 +77,7 @@ function recordLimitHit(jointName, requestedDeg, clampedDeg, limitType, label) {
   listeners.forEach((fn) => fn(logEntry));
 
   console.warn(
-    `%c⚠️ [${timeStr}] Joint Limit Hit: %c${logEntry.label} %cclamped to ${clampedDeg}° (requested: ${requestedDeg.toFixed(1)}°)`,
+    `%c[${timeStr}] Joint Limit Hit: %c${logEntry.label} %cclamped to ${clampedDeg}° (requested: ${requestedDeg.toFixed(1)}°)`,
     'color: #f87171; font-weight: bold;',
     'color: #facc15; font-weight: bold;',
     'color: #d1d5db;'

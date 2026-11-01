@@ -15,9 +15,9 @@ let targetZones = [];
 let uiElements = {};
 
 const BLOCK_CONFIG = [
-  { name: 'Red Block', color: 0xef4444, start: [-0.14, 0.185, 0.42], target: [-0.14, 0.166, 0.60] },
-  { name: 'Green Block', color: 0x10b981, start: [0.0, 0.185, 0.42], target: [0.0, 0.166, 0.60] },
-  { name: 'Blue Block', color: 0x3b82f6, start: [0.14, 0.185, 0.42], target: [0.14, 0.166, 0.60] }
+  { name: 'Red Block', color: 0xef4444, start: [-0.14, 0.185, 0.42], target: [-0.14, 0.166, 0.54] },
+  { name: 'Green Block', color: 0x10b981, start: [0.0, 0.185, 0.42], target: [0.0, 0.166, 0.54] },
+  { name: 'Blue Block', color: 0x3b82f6, start: [0.14, 0.185, 0.42], target: [0.14, 0.166, 0.54] }
 ];
 
 export function initScenarioS1(scene, onComplete) {
@@ -70,7 +70,7 @@ export function initScenarioS1(scene, onComplete) {
   mountS1UI(onComplete);
 }
 
-function clearSceneObjects(scene) {
+export function clearSceneObjects(scene) {
   blocks.forEach((b) => scene.remove(b.mesh));
   targetZones.forEach((z) => {
     scene.remove(z.pad);

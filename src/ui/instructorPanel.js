@@ -14,7 +14,7 @@ export function setupInstructorPanel(onConfigChange) {
   const toggleBtn = document.createElement('button');
   toggleBtn.id = 'instructor-toggle-btn';
   toggleBtn.title = 'Open Instructor Panel (F2 / ~)';
-  toggleBtn.innerHTML = '⚙️ Instructor';
+  toggleBtn.innerHTML = 'Instructor';
   document.body.appendChild(toggleBtn);
 
   // 2. Instructor Panel Drawer

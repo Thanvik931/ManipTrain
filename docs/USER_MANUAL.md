@@ -75,3 +75,4 @@ Upon completing or failing any scenario run, the automated **Assessment Screen**
 - **Grade Badge:** Displays earned mark (**A**, **B**, **C**, **D**, or **F**).
 - **Rubric Penalties:** Detailed card showing deductions for elapsed time, collision severity (N), trajectory jerk ($m/s^3$), and grip drops.
 - **Download JSON Log:** Click `Download JSON Report` to save the timestamped telemetry file (`run_<timestamp>.json`) for evaluator review or Python log analysis.
+

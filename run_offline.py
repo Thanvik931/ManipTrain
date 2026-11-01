@@ -22,7 +22,7 @@ def main():
     handler = functools.partial(QuietHandler, directory=DIST_DIR)
     url = f"http://localhost:{PORT}"
     print("=" * 65)
-    print(" 🦾  MANIPTRAIN: OFFLINE TELEOPERATION SIMULATOR")
+    print("    MANIPTRAIN: OFFLINE TELEOPERATION SIMULATOR")
     print("=" * 65)
     print(f"Serving offline production build from: {DIST_DIR}")
     print(f"Opening browser at: {url}")
@@ -40,3 +40,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

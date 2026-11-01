@@ -70,7 +70,7 @@ export function initScenarioS2(scene, onComplete) {
   mountS2UI(onComplete);
 }
 
-function clearSceneS2(scene) {
+export function clearSceneS2(scene) {
   if (suspectObject && suspectObject.mesh) scene.remove(suspectObject.mesh);
   if (containmentMeshGroup) scene.remove(containmentMeshGroup);
 }
@@ -171,7 +171,7 @@ export function updateS2(onComplete) {
     isDetonated = true;
     isRunning = false;
     suspectObject.mesh.material.color.setHex(0xef4444);
-    uiElements.status.textContent = '💥 DETONATED';
+    uiElements.status.textContent = 'DETONATED';
     uiElements.status.className = 'scenario-badge danger';
     uiElements.btn.textContent = 'Restart S2';
     const report = finishRunAssessment({ success: false, reason: 'tilt_detonated', tiltDeg, time: elapsed });

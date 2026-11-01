@@ -20,7 +20,7 @@ The instructor panel is hidden from the candidate during normal operation to pre
 
 ### Opening the Panel
 - **Keyboard Shortcut:** Press <kbd>F2</kbd> or the backtick / tilde key (<kbd>`</kbd> / <kbd>~</kbd>).
-- **HUD Button:** Click the small `⚙ Instructor` button located in the top toolbar.
+- **HUD Button:** Click the small `Instructor` button located in the top toolbar.
 
 ### Delay Configuration Options
 1. **Delay Mode Dropdown:**
@@ -77,3 +77,4 @@ Based on empirical validation across 60 trials, MCEME / ARTRAC operators should 
 - **Baseline (0 ms):** Score $\ge 90$ (Grade A), 0 collisions, completion time $< 30\text{ s}$.
 - **Tactical Link (Congested Hotspot / 200 ms):** Score $\ge 60$ (Grade C or better), 0 catastrophic failures (no EOD detonations, $\le 3$ contacts).
 - **Severe Latency (500 ms):** Completion without catastrophic failure, jerk index $< 180\text{ m/s}^3$.
+

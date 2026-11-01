@@ -10,15 +10,16 @@ import URDFLoader from 'urdf-loader';
 import { setupJointSliders, updateSlidersFromRobot, updateIKHUD, logCollisionEvent, logGripperEvent } from './ui/jointSliders.js';
 import { setupOperatorControls, createGripperHUD } from './ui/operatorControls.js';
 import { setupInstructorPanel } from './ui/instructorPanel.js';
+import { setupAutoDemo } from './ui/autoDemo.js';
 import { pushDelayedTarget, pushDelayedGrip, updateDelayBuffer, resetDelayBuffer } from './network/delayBuffer.js';
 import { sampleTrajectory, recordAssessmentCollision, recordAssessmentGrip } from './assessment/assessmentLogger.js';
 import { solveCCD } from './kinematics/ik_ccd.js';
 import { solveDLS } from './kinematics/ik_dls.js';
 import { createEnvironmentObstacles, initSafeAngles, checkCollisions, setScenarioObstacles } from './physics/collisionDetector.js';
 import { attachGripper, updateGrip, syncHeldObject, updateGravity, getGraspableObjects } from './physics/gripper.js';
-import { initScenarioS1, recordS1Bump, updateS1 } from './scenarios/s1_pick_place.js';
-import { initScenarioS2, recordS2Bump, updateS2 } from './scenarios/s2_suspect_object.js';
-import { initScenarioS3, recordS3Bump, updateS3, getS3Obstacles } from './scenarios/s3_confined_space.js';
+import { initScenarioS1, recordS1Bump, updateS1, clearSceneObjects } from './scenarios/s1_pick_place.js';
+import { initScenarioS2, recordS2Bump, updateS2, clearSceneS2 } from './scenarios/s2_suspect_object.js';
+import { initScenarioS3, recordS3Bump, updateS3, getS3Obstacles, clearSceneS3 } from './scenarios/s3_confined_space.js';
 
 // 1. Scene, Camera, Renderer
 const scene = new THREE.Scene();
@@ -51,12 +52,13 @@ createEnvironmentObstacles(scene);
 // 3. Scenario Switching System
 let currentScenario = 'S3';
 export function switchScenario(type) {
+  clearSceneObjects(scene); clearSceneS2(scene); clearSceneS3(scene);
   currentScenario = type;
   if (type === 'S1') { initScenarioS1(scene, (r) => console.log('S1:', r)); setScenarioObstacles([]); }
   else if (type === 'S2') { initScenarioS2(scene, (r) => console.log('S2:', r)); setScenarioObstacles([]); }
   else { initScenarioS3(scene, (r) => console.log('S3:', r)); setScenarioObstacles(getS3Obstacles()); }
   const sub = document.querySelector('#overlay-info p');
-  if (sub) sub.innerHTML = `Mode: <b>${type}</b> | ⌨️ WASD/QE Move | Space Grip | <i>F2 / ~: Instructor Panel</i>`;
+  if (sub) sub.innerHTML = `Mode: <b>${type}</b> | WASD/QE Move | Space Grip | <i>F2 / ~: Instructor Panel</i>`;
 }
 
 function mountScenarioButtons() {
@@ -104,6 +106,7 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
 
   mountScenarioButtons();
   setupInstructorPanel(() => resetDelayBuffer(targetSphere.position));
+  setupAutoDemo({ targetSphere, runActiveIK, switchScenario, pushDelayedGrip, syncTargetToWrist });
   switchScenario('S3');
   syncTargetToWrist();
 
@@ -125,17 +128,13 @@ function resetHome() {
 }
 
 function handleCollision(evt) {
-  logCollisionEvent(evt);
-  recordAssessmentCollision(evt);
-  if (currentScenario === 'S1') recordS1Bump();
-  else if (currentScenario === 'S2') recordS2Bump();
-  else recordS3Bump();
+  logCollisionEvent(evt); recordAssessmentCollision(evt);
+  if (currentScenario === 'S1') recordS1Bump(); else if (currentScenario === 'S2') recordS2Bump(); else recordS3Bump();
 }
 
 function onManualSlider() {
   if (!robotArm) return;
-  const col = checkCollisions(robotArm, (e) => handleCollision(e));
-  if (col.collided) updateSlidersFromRobot(robotArm);
+  if (checkCollisions(robotArm, handleCollision).collided) updateSlidersFromRobot(robotArm);
   syncTargetToWrist();
 }
 
