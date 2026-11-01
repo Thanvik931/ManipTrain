@@ -126,3 +126,4 @@ export function setupInstructorPanel(onConfigChange) {
     applyConfig
   };
 }
+

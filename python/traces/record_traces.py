@@ -50,3 +50,4 @@ def generate_traces():
 
 if __name__ == '__main__':
     generate_traces()
+

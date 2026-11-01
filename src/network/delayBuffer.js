@@ -143,3 +143,4 @@ export function getDelayedTarget() {
 export function getDelayBufferStats() {
   return stats;
 }
+

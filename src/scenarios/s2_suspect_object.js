@@ -3,6 +3,8 @@
 
 import * as THREE from 'three';
 import { setGraspableObjects, getHeldObject } from '../physics/gripper.js';
+import { startRunAssessment, finishRunAssessment } from '../assessment/assessmentLogger.js';
+import { showResultsModal } from '../assessment/resultsScreen.js';
 
 let isRunning = false;
 let isDetonated = false;
@@ -13,9 +15,7 @@ let suspectObject = null;
 let containmentBox = null;
 let containmentMeshGroup = null;
 let uiElements = {};
-const tempQuat = new THREE.Quaternion();
-const tempUp = new THREE.Vector3();
-const WORLD_UP = new THREE.Vector3(0, 1, 0);
+const tempQuat = new THREE.Quaternion(), tempUp = new THREE.Vector3(), WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 const START_POS = [0.14, 0.20, 0.48];
 const BOX_POS = [-0.14, 0.19, 0.52];
@@ -98,12 +98,9 @@ function mountS2UI(onComplete) {
   `;
 
   uiElements = {
-    status: panel.querySelector('#s2-status'),
-    timer: panel.querySelector('#s2-timer'),
-    bumps: panel.querySelector('#s2-bumps'),
-    tilt: panel.querySelector('#s2-tilt'),
-    tiltBar: panel.querySelector('#s2-tilt-bar'),
-    btn: panel.querySelector('#s2-action-btn')
+    status: panel.querySelector('#s2-status'), timer: panel.querySelector('#s2-timer'),
+    bumps: panel.querySelector('#s2-bumps'), tilt: panel.querySelector('#s2-tilt'),
+    tiltBar: panel.querySelector('#s2-tilt-bar'), btn: panel.querySelector('#s2-action-btn')
   };
 
   uiElements.btn.onclick = () => {
@@ -116,6 +113,7 @@ export function startS2() {
   resetS2();
   isRunning = true;
   startTime = performance.now();
+  startRunAssessment('S2');
   uiElements.status.textContent = 'RUNNING';
   uiElements.status.className = 'scenario-badge running';
   uiElements.btn.textContent = 'Reset S2';
@@ -131,9 +129,7 @@ export function resetS2() {
     suspectObject.mesh.position.copy(suspectObject.initialPos);
     suspectObject.mesh.rotation.set(0, 0, 0);
     suspectObject.mesh.material.color.setHex(0xfbbf24);
-    suspectObject.isHeld = false;
-    suspectObject.isCrushed = false;
-    suspectObject.vy = 0;
+    Object.assign(suspectObject, { isHeld: false, isCrushed: false, vy: 0 });
   }
 
   if (uiElements.status) {
@@ -178,7 +174,9 @@ export function updateS2(onComplete) {
     uiElements.status.textContent = '💥 DETONATED';
     uiElements.status.className = 'scenario-badge danger';
     uiElements.btn.textContent = 'Restart S2';
-    if (onComplete) onComplete({ success: false, reason: 'detonated', tiltDeg, time: elapsed });
+    const report = finishRunAssessment({ success: false, reason: 'tilt_detonated', tiltDeg, time: elapsed });
+    showResultsModal(report, () => resetS2());
+    if (onComplete) onComplete(report);
     return;
   }
 
@@ -193,6 +191,8 @@ export function updateS2(onComplete) {
     uiElements.status.textContent = 'SECURED';
     uiElements.status.className = 'scenario-badge completed';
     uiElements.btn.textContent = 'Restart S2';
-    if (onComplete) onComplete({ success: true, time: finalTime, bumps: bumpCount, maxTilt: tiltDeg });
+    const report = finishRunAssessment({ success: true, time: finalTime, bumps: bumpCount, maxTilt: tiltDeg });
+    showResultsModal(report, () => resetS2());
+    if (onComplete) onComplete(report);
   }
 }

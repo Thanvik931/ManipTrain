@@ -18,3 +18,4 @@ Record of completed tasks, dates, and milestones.
 - 31 Oct 2026: Task 14 - Implemented Scenario S2 Suspect Object handling with upright cylinder, open-top containment chamber, live 3D tilt meter, and 15-degree tilt-sensitive detonation failure.
 - 31 Oct 2026: Task 15 - Implemented Scenario S3 Confined Space Retrieval with narrow tunnel structure, target specimen capsule, dynamic wall collision boxes, contact budget counter (max 5), extraction pad, and multi-scenario switcher (S1/S2/S3).
 - 01 Nov 2026: Task 16 - Implemented DelayBuffer with fixed delays (0, 100, 200, 300, 500 ms), 500-sample real hotspot trace replay (idle & congested), packet loss simulation (0-20%), and discrete Instructor Panel (F2 / ~ toggle).
+- 01 Nov 2026: Task 17 - Implemented AssessmentLogger and 0-100 Multi-Factor Scoring Engine evaluating completion time, collision severity, 3D motion jerk, grip errors, and joint limits; integrated results modal and one-click JSON assessment export.

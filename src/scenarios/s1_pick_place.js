@@ -3,6 +3,8 @@
 
 import * as THREE from 'three';
 import { setGraspableObjects, getHeldObject } from '../physics/gripper.js';
+import { startRunAssessment, finishRunAssessment } from '../assessment/assessmentLogger.js';
+import { showResultsModal } from '../assessment/resultsScreen.js';
 
 let isRunning = false;
 let startTime = 0;
@@ -98,10 +100,8 @@ function mountS1UI(onComplete) {
   `;
 
   uiElements = {
-    status: panel.querySelector('#s1-status'),
-    timer: panel.querySelector('#s1-timer'),
-    bumps: panel.querySelector('#s1-bumps'),
-    placed: panel.querySelector('#s1-placed'),
+    status: panel.querySelector('#s1-status'), timer: panel.querySelector('#s1-timer'),
+    bumps: panel.querySelector('#s1-bumps'), placed: panel.querySelector('#s1-placed'),
     btn: panel.querySelector('#s1-action-btn')
   };
 
@@ -115,6 +115,7 @@ export function startS1() {
   resetS1();
   isRunning = true;
   startTime = performance.now();
+  startRunAssessment('S1');
   uiElements.status.textContent = 'RUNNING';
   uiElements.status.className = 'scenario-badge running';
   uiElements.btn.textContent = 'Reset S1';
@@ -187,7 +188,9 @@ export function updateS1(onComplete) {
     uiElements.status.textContent = 'COMPLETED';
     uiElements.status.className = 'scenario-badge completed';
     uiElements.btn.textContent = 'Restart Run';
-    if (onComplete) onComplete({ time: finalTime, bumps: bumpCount });
+    const report = finishRunAssessment({ success: true, time: finalTime, bumps: bumpCount });
+    showResultsModal(report, () => resetS1());
+    if (onComplete) onComplete(report);
   }
 }
 

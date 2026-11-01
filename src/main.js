@@ -11,6 +11,7 @@ import { setupJointSliders, updateSlidersFromRobot, updateIKHUD, logCollisionEve
 import { setupOperatorControls, createGripperHUD } from './ui/operatorControls.js';
 import { setupInstructorPanel } from './ui/instructorPanel.js';
 import { pushDelayedTarget, pushDelayedGrip, updateDelayBuffer, resetDelayBuffer } from './network/delayBuffer.js';
+import { sampleTrajectory, recordAssessmentCollision, recordAssessmentGrip } from './assessment/assessmentLogger.js';
 import { solveCCD } from './kinematics/ik_ccd.js';
 import { solveDLS } from './kinematics/ik_dls.js';
 import { createEnvironmentObstacles, initSafeAngles, checkCollisions, setScenarioObstacles } from './physics/collisionDetector.js';
@@ -43,11 +44,9 @@ orbit.target.set(0, 0.4, 0);
 // 2. Lighting, Floor & Obstacles
 const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
 keyLight.position.set(3, 5, 3);
-scene.add(new THREE.AmbientLight(0xffffff, 0.8), keyLight, new THREE.DirectionalLight(0x88bbff, 0.8));
-
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x14141c }));
 floor.rotation.x = -Math.PI / 2;
-scene.add(floor, new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a));
+scene.add(new THREE.AmbientLight(0xffffff, 0.8), keyLight, new THREE.DirectionalLight(0x88bbff, 0.8), floor, new THREE.GridHelper(10, 20, 0x3b82f6, 0x27273a));
 createEnvironmentObstacles(scene);
 
 // 3. Scenario Switching System
@@ -127,6 +126,7 @@ function resetHome() {
 
 function handleCollision(evt) {
   logCollisionEvent(evt);
+  recordAssessmentCollision(evt);
   if (currentScenario === 'S1') recordS1Bump();
   else if (currentScenario === 'S2') recordS2Bump();
   else recordS3Bump();
@@ -178,12 +178,14 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+const tempEePos = new THREE.Vector3();
 renderer.setAnimationLoop(() => {
   stats.begin();
   if (operator) operator.updateXR();
+  if (eeLink) { eeLink.getWorldPosition(tempEePos); sampleTrajectory(tempEePos); }
   updateDelayBuffer(
     (pos) => runActiveIK(pos),
-    (force) => updateGrip(force, (evt) => logGripperEvent(evt))
+    (force) => updateGrip(force, (evt) => { logGripperEvent(evt); recordAssessmentGrip(evt.type); })
   );
   syncHeldObject();
   updateGravity(0.016);

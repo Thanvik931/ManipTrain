@@ -3,6 +3,8 @@
 
 import * as THREE from 'three';
 import { setGraspableObjects, getHeldObject } from '../physics/gripper.js';
+import { startRunAssessment, finishRunAssessment } from '../assessment/assessmentLogger.js';
+import { showResultsModal } from '../assessment/resultsScreen.js';
 
 let isRunning = false;
 let isFailed = false;
@@ -28,12 +30,7 @@ export function initScenarioS3(scene, onComplete) {
 
   tunnelGroup = new THREE.Group();
   tunnelObstacles = [];
-  const wallMat = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
-    transparent: true,
-    opacity: 0.35,
-    roughness: 0.2
-  });
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.35, roughness: 0.2 });
 
   const walls = [
     { name: 'Tunnel Left Wall', s: [0.012, 0.14, 0.20], p: [-0.08, 0.235, 0.52] },
@@ -51,12 +48,11 @@ export function initScenarioS3(scene, onComplete) {
 
   extractionPad = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.003, 24), new THREE.MeshStandardMaterial({ color: 0x10b981, transparent: true, opacity: 0.35 }));
   extractionPad.position.set(...EXTRACT_POS);
-  scene.add(extractionPad);
 
   extractionRing = new THREE.Mesh(new THREE.RingGeometry(0.042, 0.048, 24), new THREE.MeshBasicMaterial({ color: 0x10b981, side: THREE.DoubleSide }));
   extractionRing.rotation.x = -Math.PI / 2;
   extractionRing.position.set(EXTRACT_POS[0], EXTRACT_POS[1] + 0.002, EXTRACT_POS[2]);
-  scene.add(extractionRing);
+  scene.add(extractionPad, extractionRing);
 
   const capMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.06, 20), new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, roughness: 0.2 }));
   capMesh.position.set(...SPECIMEN_POS);
@@ -112,10 +108,8 @@ function mountS3UI(onComplete) {
   `;
 
   uiElements = {
-    status: panel.querySelector('#s3-status'),
-    timer: panel.querySelector('#s3-timer'),
-    contacts: panel.querySelector('#s3-contacts'),
-    bar: panel.querySelector('#s3-contact-bar'),
+    status: panel.querySelector('#s3-status'), timer: panel.querySelector('#s3-timer'),
+    contacts: panel.querySelector('#s3-contacts'), bar: panel.querySelector('#s3-contact-bar'),
     btn: panel.querySelector('#s3-action-btn')
   };
 
@@ -129,6 +123,7 @@ export function startS3() {
   resetS3();
   isRunning = true;
   startTime = performance.now();
+  startRunAssessment('S3');
   uiElements.status.textContent = 'RUNNING';
   uiElements.status.className = 'scenario-badge running';
   uiElements.btn.textContent = 'Reset S3';
@@ -171,6 +166,9 @@ export function recordS3Bump() {
     uiElements.status.textContent = '💥 CONTACT LIMIT EXCEEDED';
     uiElements.status.className = 'scenario-badge danger';
     uiElements.btn.textContent = 'Restart S3';
+    const report = finishRunAssessment({ success: false, reason: 'contact_limit', contacts: wallContacts });
+    showResultsModal(report, () => resetS3());
+    if (onComplete) onComplete(report);
   }
 }
 
@@ -191,6 +189,8 @@ export function updateS3(onComplete) {
     uiElements.status.textContent = 'RETRIEVED';
     uiElements.status.className = 'scenario-badge completed';
     uiElements.btn.textContent = 'Restart S3';
-    if (onComplete) onComplete({ success: true, time: finalTime, contacts: wallContacts });
+    const report = finishRunAssessment({ success: true, time: finalTime, contacts: wallContacts });
+    showResultsModal(report, () => resetS3());
+    if (onComplete) onComplete(report);
   }
 }

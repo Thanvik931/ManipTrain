@@ -174,3 +174,20 @@ body {
 .instructor-telemetry { background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px; margin-top: 6px; font-size: 0.68rem; font-family: monospace; }
 .telem-row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #9ca3af; }
 .telem-row b { color: #60a5fa; }
+
+/* Results Screen Modal */
+.results-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(8px); }
+.results-card { background: rgba(18, 18, 26, 0.96); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; width: 360px; padding: 16px 18px; box-shadow: 0 20px 40px rgba(0,0,0,0.7); text-align: center; }
+.results-header h2 { font-size: 1.05rem; color: #f3f4f6; margin-bottom: 2px; }
+.results-scenario-tag { font-size: 0.7rem; color: #9ca3af; }
+.score-banner { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 12px 0; }
+.score-circle { width: 66px; height: 66px; border-radius: 50%; border: 3px solid #22c55e; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
+.score-val { font-size: 1.35rem; font-weight: 800; color: #fff; line-height: 1; }
+.score-max { font-size: 0.62rem; color: #9ca3af; }
+.grade-pill { font-size: 1.4rem; font-weight: 800; color: #111827; padding: 4px 14px; border-radius: 8px; }
+.results-breakdown-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+.metric-box { background: rgba(0,0,0,0.35); padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); text-align: left; }
+.metric-label { font-size: 0.66rem; color: #9ca3af; display: block; margin-bottom: 1px; }
+.metric-val { font-size: 0.78rem; color: #f3f4f6; display: block; }
+.penalty-text { font-size: 0.63rem; color: #f87171; }
+.results-actions { display: flex; flex-direction: column; gap: 6px; }
