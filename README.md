@@ -58,6 +58,21 @@ Outputs saved to `python/results/`:
 - `jerk_vs_delay.png` - Motion jerk index (hunting / overcorrection)
 - `statistical_summary.md` - Formatted report with Welch's t-tests, p-values, and Cohen's d effect sizes
 
+### 6. Offline Standalone Release Package
+For air-gapped environments or evaluation without internet/Node.js:
+- **Downloadable Package:** `release/ManipTrain-v1.0-offline.zip` (2.66 MB self-contained bundle)
+- **Windows 1-Click:** Double-click `start_windows.bat`
+- **Linux/macOS:** Run `./start_linux_mac.sh`
+- **Python Launcher:** Run `python run_offline.py`
+
+## 📚 Technical Documentation Suite
+- **[System Architecture & Design Document](docs/DESIGN.md):** Full mathematical formulation of FK/IK chains, AABB physics, teleoperation delay buffer, and 0–100 rubric penalty weights.
+- **[Operator User Manual](docs/USER_MANUAL.md):** Comprehensive instructions for camera navigation, keyboard positioning, gripper force thresholds, and scenario objectives.
+- **[Instructor & Evaluator Guide](docs/INSTRUCTOR_GUIDE.md):** Instructions for accessing the hidden Instructor Panel (F2/~), running volunteer evaluation batteries, and interpreting telemetry logs.
+- **[Demonstration Video Script](docs/VIDEO_SCRIPT.md):** Timed 3-minute video recording script (20s problem, 90s demo, 40s results, 20s learnings).
+- **[Progress Log](docs/PROGRESS.md):** Task-by-task engineering milestone log from Task 1 through Task 19.
+- **[Credits & Open-Source Attributions](docs/CREDITS.md):** UR5 CAD meshes, Three.js, and urdf-loader licensing.
+
 ## 📁 Repository Structure
 ```
 ManipTrain/
