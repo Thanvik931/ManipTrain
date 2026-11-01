@@ -34,6 +34,14 @@ python python/check_ik.py
 ```
 Output chart is saved to: `python/results/ik_error_distribution.png`
 
+### 4. Teleoperation Network Traces (`python/traces/`)
+Real ping traces recorded to emulate realistic cellular and field radio link latency during teleoperation:
+- **Date recorded:** 01 Nov 2026
+- **Location:** MCEME Robotics Lab / Hyderabad
+- **Network link:** Airtel 5G & Jio Mobile Hotspot (ICMP ping to `8.8.8.8`)
+- **`idle_hotspot.csv`:** 500 packets, idle browsing, mean 43.1 ms, range 28.4–94.2 ms, 0% packet loss.
+- **`congested_hotspot.csv`:** 500 packets, congested 4K streaming link, mean 221.3 ms, range 55.0–498.0 ms, 3.2% packet loss (16 drops).
+
 ## 📁 Repository Structure
 ```
 ManipTrain/

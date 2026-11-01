@@ -18,43 +18,16 @@ body {
 #overlay-info p { font-size: 0.875rem; color: #9ca3af; }
 
 /* Floating Controls & Kinematics Panel */
-#joint-controls {
-  position: absolute; top: 16px; right: 16px; width: 320px;
-  background: rgba(18, 18, 26, 0.90);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px; padding: 12px 14px; color: #f3f4f6;
-  backdrop-filter: blur(10px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-}
-.panel-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 8px; padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
+#joint-controls { position: absolute; top: 16px; right: 16px; width: 320px; background: rgba(18, 18, 26, 0.90); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; padding: 12px 14px; color: #f3f4f6; backdrop-filter: blur(10px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
 .panel-header h2 { font-size: 0.9rem; font-weight: 600; color: #60a5fa; }
-
-#reset-joints-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #e5e7eb; padding: 3px 8px; font-size: 0.75rem;
-  border-radius: 4px; cursor: pointer; transition: background 0.15s;
-}
+#reset-joints-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #e5e7eb; padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
 #reset-joints-btn:hover { background: rgba(239, 68, 68, 0.4); border-color: #ef4444; }
-
 .slider-row { margin-bottom: 6px; padding: 2px 4px; border-radius: 6px; }
-.slider-label-row {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.76rem; margin-bottom: 2px;
-}
+.slider-label-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; margin-bottom: 2px; }
 .slider-label-row label { color: #d1d5db; }
-.deg-display {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.76rem; color: #facc15; background: rgba(0, 0, 0, 0.4);
-  padding: 1px 5px; border-radius: 4px; min-width: 48px; text-align: right;
-}
-.slider-row input[type="range"] {
-  width: 100%; height: 5px; background: #374151; outline: none;
-  cursor: pointer; accent-color: #3b82f6;
-}
+.deg-display { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.76rem; color: #facc15; background: rgba(0, 0, 0, 0.4); padding: 1px 5px; border-radius: 4px; min-width: 48px; text-align: right; }
+.slider-row input[type="range"] { width: 100%; height: 5px; background: #374151; outline: none; cursor: pointer; accent-color: #3b82f6; }
 
 @keyframes flashRed {
   0% { background: rgba(239, 68, 68, 0.45); }
@@ -187,3 +160,17 @@ body {
   cursor: pointer; transition: all 0.15s;
 }
 .scenario-btn:hover { background: #d97706; color: #fff; }
+
+/* Instructor Panel */
+#instructor-toggle-btn { position: absolute; top: 16px; right: 345px; background: rgba(18, 18, 26, 0.85); color: #9ca3af; border: 1px solid rgba(255, 255, 255, 0.15); padding: 5px 9px; font-size: 0.72rem; font-weight: 600; border-radius: 6px; cursor: pointer; z-index: 100; transition: all 0.15s; }
+#instructor-toggle-btn:hover, #instructor-toggle-btn.active { color: #f59e0b; border-color: #f59e0b; }
+.instructor-panel { position: absolute; top: 52px; right: 345px; width: 270px; background: rgba(17, 24, 39, 0.95); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 8px; padding: 10px 12px; z-index: 100; box-shadow: 0 10px 25px rgba(0,0,0,0.6); backdrop-filter: blur(8px); }
+.instructor-panel.hidden { display: none; }
+.instructor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.instructor-header h3 { font-size: 0.78rem; color: #fbbf24; }
+#instructor-close-btn { background: none; border: none; color: #9ca3af; font-size: 1.1rem; cursor: pointer; }
+.instructor-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.7rem; color: #d1d5db; }
+.instructor-row select { background: #1f2937; color: #f3f4f6; border: 1px solid #374151; padding: 2px 4px; font-size: 0.68rem; border-radius: 4px; }
+.instructor-telemetry { background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px; margin-top: 6px; font-size: 0.68rem; font-family: monospace; }
+.telem-row { display: flex; justify-content: space-between; margin-bottom: 2px; color: #9ca3af; }
+.telem-row b { color: #60a5fa; }

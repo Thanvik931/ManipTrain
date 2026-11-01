@@ -1,5 +1,5 @@
 // src/main.js
-// Task 15: Scenario S3 Confined Space Retrieval with wall contact limit & S1/S2/S3 switcher.
+// Task 16: Delayed teleoperation with 0-500ms delay buffer, mobile traces, packet loss & instructor panel.
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -9,6 +9,8 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import URDFLoader from 'urdf-loader';
 import { setupJointSliders, updateSlidersFromRobot, updateIKHUD, logCollisionEvent, logGripperEvent } from './ui/jointSliders.js';
 import { setupOperatorControls, createGripperHUD } from './ui/operatorControls.js';
+import { setupInstructorPanel } from './ui/instructorPanel.js';
+import { pushDelayedTarget, pushDelayedGrip, updateDelayBuffer, resetDelayBuffer } from './network/delayBuffer.js';
 import { solveCCD } from './kinematics/ik_ccd.js';
 import { solveDLS } from './kinematics/ik_dls.js';
 import { createEnvironmentObstacles, initSafeAngles, checkCollisions, setScenarioObstacles } from './physics/collisionDetector.js';
@@ -25,9 +27,8 @@ camera.position.set(1.5, 1.2, 1.8);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
 renderer.xr.enabled = true;
+renderer.shadowMap.enabled = true;
 document.getElementById('app').appendChild(renderer.domElement);
 document.body.appendChild(VRButton.createButton(renderer));
 
@@ -57,7 +58,7 @@ export function switchScenario(type) {
   else if (type === 'S2') { initScenarioS2(scene, (r) => console.log('S2:', r)); setScenarioObstacles([]); }
   else { initScenarioS3(scene, (r) => console.log('S3:', r)); setScenarioObstacles(getS3Obstacles()); }
   const sub = document.querySelector('#overlay-info p');
-  if (sub) sub.innerHTML = `Mode: <b>${type}</b> | ⌨️ WASD/QE Move | Space Grip | <i>Click object to reach</i>`;
+  if (sub) sub.innerHTML = `Mode: <b>${type}</b> | ⌨️ WASD/QE Move | Space Grip | <i>F2 / ~: Instructor Panel</i>`;
 }
 
 function mountScenarioButtons() {
@@ -84,6 +85,7 @@ transformControls.size = 0.6;
 transformControls.attach(targetSphere);
 scene.add(transformControls);
 transformControls.addEventListener('dragging-changed', (e) => { orbit.enabled = !e.value; });
+transformControls.addEventListener('change', () => pushDelayedTarget(targetSphere.position));
 
 // 5. Robot Loading & IK
 let robotArm = null;
@@ -102,20 +104,19 @@ loader.load('/models/ur5/ur5.urdf', (robot) => {
   initSafeAngles(robot);
 
   mountScenarioButtons();
+  setupInstructorPanel(() => resetDelayBuffer(targetSphere.position));
   switchScenario('S3');
   syncTargetToWrist();
 
-  setupJointSliders(robot, null, () => onManualSlider(), () => resetHome(), (m) => {
-    activeSolver = m;
-    runActiveIK();
-  });
-  createGripperHUD((f) => updateGrip(f, (evt) => logGripperEvent(evt)));
+  setupJointSliders(robot, null, () => onManualSlider(), () => resetHome(), (m) => { activeSolver = m; runActiveIK(targetSphere.position); });
+  createGripperHUD((f) => pushDelayedGrip(f));
 });
 
 function syncTargetToWrist() {
   if (!robotArm || !eeLink) return;
   robotArm.updateMatrixWorld(true);
   eeLink.getWorldPosition(targetSphere.position);
+  resetDelayBuffer(targetSphere.position);
   updateIKHUD(targetSphere.position, 0.0, 0, true);
 }
 
@@ -138,40 +139,35 @@ function onManualSlider() {
   syncTargetToWrist();
 }
 
-function runActiveIK() {
+function runActiveIK(targetPos = targetSphere.position) {
   if (!robotArm) return;
   const opts = activeSolver === 'DLS' ? { maxIterations: 12, toleranceMeters: 0.002, lambda: 0.04 } : { maxIterations: 12, toleranceMeters: 0.005 };
-  const res = activeSolver === 'DLS' ? solveDLS(robotArm, targetSphere.position, opts) : solveCCD(robotArm, targetSphere.position, opts);
+  const res = activeSolver === 'DLS' ? solveDLS(robotArm, targetPos, opts) : solveCCD(robotArm, targetPos, opts);
   if (checkCollisions(robotArm, (e) => handleCollision(e)).collided) syncTargetToWrist();
   updateSlidersFromRobot(robotArm);
-  updateIKHUD(targetSphere.position, res.finalDistanceMm, res.iterations, res.reached);
+  updateIKHUD(targetPos, res.finalDistanceMm, res.iterations, res.reached);
 }
-
-transformControls.addEventListener('change', () => runActiveIK());
 
 // 6. Operator Controls & Raycast Click
 const operator = setupOperatorControls({
   scene,
   renderer,
   targetSphere,
-  onTargetMoved: () => runActiveIK(),
-  onGripChanged: (f) => updateGrip(f, (evt) => logGripperEvent(evt))
+  onTargetMoved: () => pushDelayedTarget(targetSphere.position),
+  onGripChanged: (f) => pushDelayedGrip(f)
 });
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (e.button !== 0 || transformControls.dragging) return;
-  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  mouse.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(mouse, camera);
-
-  const meshes = getGraspableObjects().map((g) => g.mesh);
-  const hits = raycaster.intersectObjects(meshes, true);
+  const hits = raycaster.intersectObjects(getGraspableObjects().map((g) => g.mesh), true);
   if (hits.length > 0) {
     hits[0].object.getWorldPosition(targetSphere.position);
     targetSphere.position.y += 0.035;
-    runActiveIK();
+    pushDelayedTarget(targetSphere.position);
   }
 });
 
@@ -185,6 +181,10 @@ window.addEventListener('resize', () => {
 renderer.setAnimationLoop(() => {
   stats.begin();
   if (operator) operator.updateXR();
+  updateDelayBuffer(
+    (pos) => runActiveIK(pos),
+    (force) => updateGrip(force, (evt) => logGripperEvent(evt))
+  );
   syncHeldObject();
   updateGravity(0.016);
   if (currentScenario === 'S1') updateS1();
