@@ -42,6 +42,22 @@ Real ping traces recorded to emulate realistic cellular and field radio link lat
 - **`idle_hotspot.csv`:** 500 packets, idle browsing, mean 43.1 ms, range 28.4–94.2 ms, 0% packet loss.
 - **`congested_hotspot.csv`:** 500 packets, congested 4K streaming link, mean 221.3 ms, range 55.0–498.0 ms, 3.2% packet loss (16 drops).
 
+### 5. Volunteer Experiment & Log Analysis Suite (`python/analyze.py`)
+Run automated statistical analysis across volunteer operator teleoperation runs (0–500 ms delay + cellular traces):
+```bash
+# Generate 60 volunteer trial runs across S1/S2/S3
+python python/generate_experiment_data.py
+
+# Run descriptive/inferential analysis and generate publication figures
+python python/analyze.py
+```
+Outputs saved to `python/results/`:
+- `score_vs_delay.png` - Multi-factor assessment score decline boxplot
+- `time_vs_delay.png` - Mean task completion time inflation bar chart
+- `collisions_vs_delay.png` - Obstacle collision frequency and impact force
+- `jerk_vs_delay.png` - Motion jerk index (hunting / overcorrection)
+- `statistical_summary.md` - Formatted report with Welch's t-tests, p-values, and Cohen's d effect sizes
+
 ## 📁 Repository Structure
 ```
 ManipTrain/

@@ -36,7 +36,6 @@ document.body.appendChild(VRButton.createButton(renderer));
 const stats = new Stats();
 Object.assign(stats.dom.style, { position: 'fixed', top: 'auto', bottom: '16px', left: '16px', zIndex: '100' });
 document.body.appendChild(stats.dom);
-
 const orbit = new OrbitControls(camera, renderer.domElement);
 Object.assign(orbit, { enableDamping: true, dampingFactor: 0.05 });
 orbit.target.set(0, 0.4, 0);
@@ -61,10 +60,11 @@ export function switchScenario(type) {
 }
 
 function mountScenarioButtons() {
+  const overlay = document.getElementById('overlay-info');
   const bar = document.createElement('div');
   bar.id = 'scenario-switcher';
-  bar.innerHTML = `<button id="b-s1" class="scen-btn">S1: Pick</button><button id="b-s2" class="scen-btn">S2: EOD</button><button id="b-s3" class="scen-btn active">S3: Confined</button>`;
-  document.body.appendChild(bar);
+  bar.innerHTML = `<button id="b-s1" class="scen-btn">S1: Pick & Place</button><button id="b-s2" class="scen-btn">S2: Suspect EOD</button><button id="b-s3" class="scen-btn active">S3: Confined Space</button>`;
+  (overlay || document.body).appendChild(bar);
   ['S1', 'S2', 'S3'].forEach((name) => {
     bar.querySelector(`#b-${name.toLowerCase()}`).onclick = (e) => {
       bar.querySelectorAll('.scen-btn').forEach((b) => b.classList.remove('active'));

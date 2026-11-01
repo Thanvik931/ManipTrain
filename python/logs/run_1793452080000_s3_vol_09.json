@@ -1,0 +1,40 @@
+{
+  "sessionId": "run_1793452080000_s3_vol_09",
+  "volunteerId": "VOL_09",
+  "timestamp": "2026-11-01T01:52:04.114204+00:00",
+  "scenario": "S3",
+  "delayConfig": {
+    "mode": "fixed",
+    "conditionName": "0ms",
+    "fixedDelayMs": 0,
+    "packetLossPct": 0,
+    "meanLatencyMs": 0.0
+  },
+  "outcome": "SUCCESS",
+  "failureReason": null,
+  "completionTimeSec": 34.12,
+  "score": {
+    "finalScore": 92,
+    "grade": "A",
+    "penalties": {
+      "time": 4.1,
+      "collision": 0,
+      "jerk": 3.7,
+      "grip": 0.0,
+      "outcome": 0.0
+    }
+  },
+  "metrics": {
+    "collisionCount": 0,
+    "maxImpactN": 0.0,
+    "trajectoryLengthM": 1.39,
+    "meanJerkIndex": 36.5,
+    "gripEvents": {
+      "grab": 3,
+      "slip": 0,
+      "crush": 0
+    },
+    "limitHits": 0
+  },
+  "collisions": []
+}

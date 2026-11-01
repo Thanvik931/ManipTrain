@@ -1,0 +1,49 @@
+{
+  "sessionId": "run_1793448425000_s3_vol_01",
+  "volunteerId": "VOL_01",
+  "timestamp": "2026-11-01T01:52:03.980272+00:00",
+  "scenario": "S3",
+  "delayConfig": {
+    "mode": "trace_congested",
+    "conditionName": "Trace (Congested)",
+    "fixedDelayMs": 221,
+    "packetLossPct": 3,
+    "meanLatencyMs": 221.0
+  },
+  "outcome": "SUCCESS",
+  "failureReason": null,
+  "completionTimeSec": 81.98,
+  "score": {
+    "finalScore": 49,
+    "grade": "D",
+    "penalties": {
+      "time": 25.0,
+      "collision": 17.1,
+      "jerk": 9.4,
+      "grip": 0.0,
+      "outcome": 0.0
+    }
+  },
+  "metrics": {
+    "collisionCount": 2,
+    "maxImpactN": 31.9,
+    "trajectoryLengthM": 2.04,
+    "meanJerkIndex": 93.9,
+    "gripEvents": {
+      "grab": 3,
+      "slip": 0,
+      "crush": 0
+    },
+    "limitHits": 0
+  },
+  "collisions": [
+    {
+      "link": "wrist_2_link",
+      "impactN": 31.9
+    },
+    {
+      "link": "wrist_2_link",
+      "impactN": 23.5
+    }
+  ]
+}

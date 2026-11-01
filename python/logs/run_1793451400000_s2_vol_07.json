@@ -1,0 +1,65 @@
+{
+  "sessionId": "run_1793451400000_s2_vol_07",
+  "volunteerId": "VOL_07",
+  "timestamp": "2026-11-01T01:52:04.085321+00:00",
+  "scenario": "S2",
+  "delayConfig": {
+    "mode": "fixed",
+    "conditionName": "500ms",
+    "fixedDelayMs": 500,
+    "packetLossPct": 5,
+    "meanLatencyMs": 500.0
+  },
+  "outcome": "FAILED",
+  "failureReason": "TILT_EXCEEDED (Hazard detonated >15 deg)",
+  "completionTimeSec": 146.57,
+  "score": {
+    "finalScore": 0,
+    "grade": "F",
+    "penalties": {
+      "time": 25.0,
+      "collision": 40.0,
+      "jerk": 15.0,
+      "grip": 30.0,
+      "outcome": 50.0
+    }
+  },
+  "metrics": {
+    "collisionCount": 6,
+    "maxImpactN": 49.6,
+    "trajectoryLengthM": 2.71,
+    "meanJerkIndex": 167.9,
+    "gripEvents": {
+      "grab": 3,
+      "slip": 1,
+      "crush": 1
+    },
+    "limitHits": 0
+  },
+  "collisions": [
+    {
+      "link": "ee_link",
+      "impactN": 49.6
+    },
+    {
+      "link": "ee_link",
+      "impactN": 43.1
+    },
+    {
+      "link": "wrist_2_link",
+      "impactN": 33.4
+    },
+    {
+      "link": "ee_link",
+      "impactN": 37.1
+    },
+    {
+      "link": "gripper_l",
+      "impactN": 48.3
+    },
+    {
+      "link": "wrist_2_link",
+      "impactN": 31.0
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "sessionId": "run_1793448510000_s2_vol_02",
+  "volunteerId": "VOL_02",
+  "timestamp": "2026-11-01T01:52:03.982311+00:00",
+  "scenario": "S2",
+  "delayConfig": {
+    "mode": "fixed",
+    "conditionName": "0ms",
+    "fixedDelayMs": 0,
+    "packetLossPct": 0,
+    "meanLatencyMs": 0.0
+  },
+  "outcome": "SUCCESS",
+  "failureReason": null,
+  "completionTimeSec": 31.94,
+  "score": {
+    "finalScore": 95,
+    "grade": "A",
+    "penalties": {
+      "time": 1.9,
+      "collision": 0,
+      "jerk": 3.5,
+      "grip": 0.0,
+      "outcome": 0.0
+    }
+  },
+  "metrics": {
+    "collisionCount": 0,
+    "maxImpactN": 0.0,
+    "trajectoryLengthM": 1.38,
+    "meanJerkIndex": 34.9,
+    "gripEvents": {
+      "grab": 3,
+      "slip": 0,
+      "crush": 0
+    },
+    "limitHits": 0
+  },
+  "collisions": []
+}

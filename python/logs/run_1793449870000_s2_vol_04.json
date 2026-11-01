@@ -1,0 +1,69 @@
+{
+  "sessionId": "run_1793449870000_s2_vol_04",
+  "volunteerId": "VOL_04",
+  "timestamp": "2026-11-01T01:52:04.019216+00:00",
+  "scenario": "S2",
+  "delayConfig": {
+    "mode": "fixed",
+    "conditionName": "500ms",
+    "fixedDelayMs": 500,
+    "packetLossPct": 5,
+    "meanLatencyMs": 500.0
+  },
+  "outcome": "SUCCESS",
+  "failureReason": null,
+  "completionTimeSec": 138.38,
+  "score": {
+    "finalScore": 20,
+    "grade": "F",
+    "penalties": {
+      "time": 25.0,
+      "collision": 40.0,
+      "jerk": 15.0,
+      "grip": 0.0,
+      "outcome": 0.0
+    }
+  },
+  "metrics": {
+    "collisionCount": 7,
+    "maxImpactN": 58.6,
+    "trajectoryLengthM": 2.8,
+    "meanJerkIndex": 159.3,
+    "gripEvents": {
+      "grab": 3,
+      "slip": 0,
+      "crush": 0
+    },
+    "limitHits": 1
+  },
+  "collisions": [
+    {
+      "link": "ee_link",
+      "impactN": 37.1
+    },
+    {
+      "link": "ee_link",
+      "impactN": 58.6
+    },
+    {
+      "link": "gripper_l",
+      "impactN": 49.2
+    },
+    {
+      "link": "gripper_l",
+      "impactN": 33.0
+    },
+    {
+      "link": "wrist_2_link",
+      "impactN": 35.0
+    },
+    {
+      "link": "ee_link",
+      "impactN": 46.5
+    },
+    {
+      "link": "gripper_l",
+      "impactN": 30.0
+    }
+  ]
+}
